@@ -1,4 +1,7 @@
 // app.js
+require('dotenv').config();
+console.log('JWT Secret Key:', process.env.JWT_SECRET);
+
 const express = require('express');
 const app = express();
 

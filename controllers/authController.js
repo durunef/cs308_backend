@@ -1,17 +1,32 @@
 // controllers/authController.js
 const User = require('./../models/userModel');
 const catchAsync = require('./../utils/catchAsync');
+const jwt = require('jsonwebtoken');
+
+
+// JWT oluşturma
+const signToken = (userId, userEmail) => {
+  return jwt.sign(
+    { id: userId, email: userEmail }, 
+    process.env.JWT_SECRET, 
+    { expiresIn: '1h' } // 1 saat geçerli
+  );
+};
+
 
 // Kayıt (signup) fonksiyonu
 exports.signup = catchAsync(async (req, res, next) => {
   // Doğrudan düz metin password kaydedilir
   const newUser = await User.create(req.body);
 
+  const token = signToken(newUser._id, newUser.email); 
+
   res.status(201).json({
     status: 'success',
     data: {
       user: newUser
-    }
+    },
+    token
   });
 });
 
@@ -38,9 +53,13 @@ exports.login = catchAsync(async (req, res, next) => {
     });
   }
 
+  //her şey yolundaysa token üretme
+  const token = signToken(user._id, user.email);
+
   // Başarılı login
   res.status(200).json({
     status: 'success',
-    message: 'Logged in successfully (no hashing, no JWT yet)'
+    message: 'Logged in successfully (no hashing)',
+    token
   });
 });
