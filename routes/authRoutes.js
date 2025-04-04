@@ -14,6 +14,12 @@ router.get('/Protected', authMiddleware, (req, res) => {
       message: 'You are authorized!',
       user: req.user  // req.user = decoded satırından gelen payload.
     });
+
+
+    
+
+
+
  });
 
 module.exports = router;

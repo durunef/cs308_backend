@@ -1,26 +1,30 @@
-// app.js
 require('dotenv').config();
-console.log('JWT Secret Key:', process.env.JWT_SECRET);
-
 const express = require('express');
 const app = express();
 
 // Veritabanı bağlantısı
 require('./config/db');
 
-// JSON verilerini parse et
+// Middleware'ler
 app.use(express.json());
 
 // Auth rotaları
 const authRouter = require('./routes/authRoutes');
 app.use('/api/v1/auth', authRouter);
 
-// Basit ana rota
+
+//yeni user rotası ekledim. User kısmı burda
+const userRouter = require('./routes/userRoutes');
+app.use('/api/user', userRouter);
+
+
+
+// Ana rota
 app.get('/', (req, res) => {
   res.send('Hello from the server side');
 });
 
-// (Opsiyonel) Global hata yakalama middleware'i
+// Global hata yakalama middleware'i
 app.use((err, req, res, next) => {
   if (err.name === 'ValidationError') {
     return res.status(400).json({
@@ -34,7 +38,5 @@ app.use((err, req, res, next) => {
   });
 });
 
-const port = 3000;
-app.listen(port, () => {
-  console.log(`App running on port ${port}...`);
-});
+// **App nesnesini dışa aktar**
+module.exports = app;

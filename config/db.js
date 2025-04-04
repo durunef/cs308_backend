@@ -9,10 +9,10 @@ mongoose
     useUnifiedTopology: true
   })
   .then(() => {
-    console.log('MongoDB bağlantısı başarılı!');
+    console.log('MongoDB connection is successful!');
   })
   .catch((err) => {
-    console.error('MongoDB bağlantı hatası:', err);
+    console.error('MongoDB connection error:', err);
   });
 
 module.exports = mongoose;

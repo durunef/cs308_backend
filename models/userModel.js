@@ -8,6 +8,8 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: [true, 'Please tell us your name!']
   },
+
+
   email: {
     type: String,
     required: [true, 'Please provide your email'],
@@ -15,6 +17,8 @@ const userSchema = new mongoose.Schema({
     lowercase: true,
     validate: [validator.isEmail, 'Please provide a valid email']
   },
+
+
   photo: String,
   password: {
     type: String,
@@ -22,6 +26,8 @@ const userSchema = new mongoose.Schema({
     minlength: 5
     // Şifreyi düz metin olarak saklıyoruz, "select: false" da yok
   },
+
+
   passwordConfirm: {
     type: String,
     required: [true, 'Please confirm your password'],
@@ -32,7 +38,15 @@ const userSchema = new mongoose.Schema({
       },
       message: 'Passwords are not same!'
     }
+  },
+
+  address: {
+    street: { type: String, default: ' ' },
+    city: { type: String, default: ' ' },
+    postalCode: { type: String, default: ' ' }
   }
+
+
 });
 
 // Artık herhangi bir pre('save') veya bcrypt.hash yok!
