@@ -11,7 +11,7 @@ exports.updateAddress = catchAsync(async (req, res, next) => {
   if (!street || !city || !postalCode) {
     return res.status(400).json({ 
       status: 'fail', 
-      message: 'Lütfen street, city ve postalCode bilgilerini sağlayın.' 
+      message: 'Please share the street, city and postalCode informations.' 
     });
   }
 
@@ -19,7 +19,7 @@ exports.updateAddress = catchAsync(async (req, res, next) => {
   if (!validator.isPostalCode(postalCode, 'any')) {
     return res.status(400).json({ 
       status: 'fail', 
-      message: 'Geçersiz postalCode formatı.' 
+      message: 'Invalid postal code format.' 
     });
   }
   
