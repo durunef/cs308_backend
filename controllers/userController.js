@@ -7,7 +7,7 @@ exports.updateAddress = catchAsync(async (req, res, next) => {
   // İstekten adres bilgilerini al
   const { street, city, postalCode } = req.body;
 
-  // Gerekli alanların kontrolü
+  // gerekli alanların kontrolü
   if (!street || !city || !postalCode) {
     return res.status(400).json({ 
       status: 'fail', 
@@ -15,7 +15,7 @@ exports.updateAddress = catchAsync(async (req, res, next) => {
     });
   }
 
-  // PostalCode doğrulaması (örneğin Türk posta kodu formatı için)
+  // postal code kontrol ediyorum any i değiştirebilrisn spesifik bir ülkenin postal code u için
   if (!validator.isPostalCode(postalCode, 'any')) {
     return res.status(400).json({ 
       status: 'fail', 

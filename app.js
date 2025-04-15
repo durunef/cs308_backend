@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const app = express();
 
+
 // Veritabanı bağlantısı
 require('./config/db');
 
@@ -17,6 +18,11 @@ app.use('/api/v1/auth', authRouter);
 const userRouter = require('./routes/userRoutes');
 app.use('/api/user', userRouter);
 
+const categoryRoutes = require('./routes/categoryRoutes');
+app.use('/api/categories', categoryRoutes);
+
+const productRoutes = require('./routes/productRoutes');
+app.use('/api/products', productRoutes);
 
 
 // Ana rota
@@ -40,3 +46,5 @@ app.use((err, req, res, next) => {
 
 // **App nesnesini dışa aktar**
 module.exports = app;
+
+
