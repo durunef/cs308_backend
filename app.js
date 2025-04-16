@@ -25,6 +25,10 @@ app.use('/api/categories', categoryRoutes);
 const productRoutes = require('./routes/productRoutes');
 app.use('/api/products', productRoutes);
 
+const reviewRoutes = require('./routes/reviewRoutes');
+app.use('/api/reviews', reviewRoutes);
+
+
 
 // Ana rota
 app.get('/', (req, res) => {
