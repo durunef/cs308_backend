@@ -1,12 +1,10 @@
-// routes/reviewRoutes.js
-
 const express = require('express');
 const router = express.Router();
 const reviewController = require('../controllers/reviewController');
 const authMiddleware = require('../middleware/authMiddleware');
-// Eğer varsa "restrictTo" gibi ek role kontrol middleware'i ekleyin
-// const { restrictTo } = require('../middleware/authorization');
+const restrictTo = require('../middleware/restrictTo');
 
-router.put('/:reviewId/approve', authMiddleware, /* restrictTo('product-manager'), */ reviewController.approveReview);
+// Yorum onaylama: Sadece admin rolüne sahip kullanıcılar erişebilsin.
+router.put('/:reviewId/approve', authMiddleware, restrictTo('admin'), reviewController.approveReview);
 
 module.exports = router;

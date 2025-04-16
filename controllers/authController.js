@@ -1,40 +1,41 @@
-// controllers/authController.js
-const User = require('./../models/userModel');
-const catchAsync = require('./../utils/catchAsync');
+const User = require('../models/userModel');
+const catchAsync = require('../utils/catchAsync');
 const jwt = require('jsonwebtoken');
 
-
-// JWT oluşturma
-const signToken = (userId, userEmail) => {
+// Token üretme fonksiyonu: Payload içerisine id, email ve role ekleniyor.
+const signToken = (userId, userEmail, userRole) => {
   return jwt.sign(
-    { id: userId, email: userEmail }, 
-    process.env.JWT_SECRET, 
-    { expiresIn: '1h' } // 1 saat geçerli
+    { id: userId, email: userEmail, role: userRole },
+    process.env.JWT_SECRET,
+    { expiresIn: '1h' }
   );
 };
 
-
-// Kayıt (signup) fonksiyonu
 exports.signup = catchAsync(async (req, res, next) => {
-  // Doğrudan düz metin password kaydedilir
+  // Email'i normalize et.
+  req.body.email = req.body.email.toLowerCase();
+
+  // Email'in domain kısmını kontrol et: Eğer domain "admin.com" ise role "admin"
+  const emailParts = req.body.email.split('@');
+  if (emailParts.length === 2 && emailParts[1] === 'admin.com') {
+    req.body.role = 'admin';
+  } else {
+    req.body.role = 'user';
+  }
+
   const newUser = await User.create(req.body);
 
-  const token = signToken(newUser._id, newUser.email); 
+  const token = signToken(newUser._id, newUser.email, newUser.role);
 
   res.status(201).json({
     status: 'success',
-    data: {
-      user: newUser
-    },
+    data: { user: newUser },
     token
   });
 });
 
-// Login fonksiyonu
 exports.login = catchAsync(async (req, res, next) => {
   const { email, password } = req.body;
-
-  // Email ve şifre gönderildi mi kontrol et
   if (!email || !password) {
     return res.status(400).json({
       status: 'fail',
@@ -42,10 +43,8 @@ exports.login = catchAsync(async (req, res, next) => {
     });
   }
 
-  // Düz metin şifre olduğu için .select('+password') vb. yok
-  const user = await User.findOne({ email });
-
-  // Kullanıcı yok veya şifre eşleşmiyorsa
+  const normalizedEmail = email.toLowerCase();
+  const user = await User.findOne({ email: normalizedEmail });
   if (!user || user.password !== password) {
     return res.status(401).json({
       status: 'fail',
@@ -53,19 +52,10 @@ exports.login = catchAsync(async (req, res, next) => {
     });
   }
 
-  //her şey yolundaysa token üretme
-  const token = signToken(user._id, user.email);
-
-  // Başarılı login
+  const token = signToken(user._id, user.email, user.role);
   res.status(200).json({
     status: 'success',
-    message: 'Logged in successfully (no hashing)',
+    message: 'Logged in successfully',
     token
   });
-
-  
-
-
-
-
 });
