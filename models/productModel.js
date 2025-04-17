@@ -31,6 +31,14 @@ const productSchema = new mongoose.Schema(
       required: [true, 'Please provide product price'],
       min: [0, 'Price cannot be negative']
     },
+    currency: {
+      type: String,
+      default: 'USD'
+    },
+    image: {
+      type: String,
+      default: '/images/default-product.jpg'
+    },
     warrantyStatus: {
       type: String,
       enum: ['valid', 'expired', 'none'],
@@ -40,11 +48,18 @@ const productSchema = new mongoose.Schema(
       type: String,
       required: [true, 'Please provide distributor information']
     },
-    // Category referansı ekliyoruz:
     category: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Category',
       required: [true, 'Please provide a valid category']
+    },
+    type: {
+      type: String,
+      required: [true, 'Please provide product type']
+    },
+    subtype: {
+      type: String,
+      required: [true, 'Please provide product subtype']
     }
   },
   {
