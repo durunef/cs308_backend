@@ -1,3 +1,5 @@
+// controllers/authController.js
+
 const User = require('../models/userModel');
 const catchAsync = require('../utils/catchAsync');
 const jwt = require('jsonwebtoken');
@@ -12,18 +14,20 @@ const signToken = (userId, userEmail, userRole) => {
 };
 
 exports.signup = catchAsync(async (req, res, next) => {
-  // Email'i normalize et.
   req.body.email = req.body.email.toLowerCase();
-
-  // Email'in domain kısmını kontrol et: Eğer domain "admin.com" ise role "admin"
   const emailParts = req.body.email.split('@');
-  if (emailParts.length === 2 && emailParts[1] === 'admin.com') {
+  const domain = emailParts.length === 2 ? emailParts[1] : '';
+
+  if (domain === 'admin.com') {
     req.body.role = 'admin';
+  } else if (domain === 'delivery.com') {
+    req.body.role = 'delivery';
   } else {
     req.body.role = 'user';
   }
 
-  const newUser = await User.create(req.body);
+  const { name, email, password, passwordConfirm, role } = req.body;
+  const newUser = await User.create({ name, email, password, passwordConfirm, role });
 
   const token = signToken(newUser._id, newUser.email, newUser.role);
 

@@ -38,7 +38,7 @@ const userSchema = new mongoose.Schema(
     // Rol alanı: Email domainine göre admin atanacak; aksi halde varsayılan "user"
     role: {
       type: String,
-      enum: ['user', 'product-manager', 'admin'],
+      enum: ['user', 'product-manager', 'admin', 'delivery'],
       default: 'user'
     }
   },
