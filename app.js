@@ -35,8 +35,7 @@ const reviewRoutes = require('./routes/reviewRoutes');
 app.use('/api/reviews', reviewRoutes);
 // app.js içinde
 
-const orderRoutes = require('./routes/orderRoutes');
-app.use('/api/orders', orderRoutes);
+
 
 
 
