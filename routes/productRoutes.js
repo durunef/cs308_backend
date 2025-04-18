@@ -19,4 +19,8 @@ router
   .route('/:id')
   .get(productController.getProductById);
 
+// Ürün listeleme, arama ve sıralama (GET)
+router.get('/', productController.getProducts);
+
+
 module.exports = router;
