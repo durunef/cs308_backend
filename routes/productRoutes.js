@@ -8,4 +8,8 @@ const authMiddleware = require('../middleware/authMiddleware'); // Eğer auth mi
 // Ürün ekleme: authMiddleware kullanıyorsanız yalnızca giriş yapmış kullanıcı eklesin
 router.post('/', authMiddleware, productController.createProduct);
 
+// Ürün listeleme, arama ve sıralama (GET)
+router.get('/', productController.getProducts);
+
+
 module.exports = router;
