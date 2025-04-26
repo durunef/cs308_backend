@@ -1,19 +1,13 @@
 // controllers/authController.js
 
 const User = require('../models/userModel');
-const Cart = require('./../models/cartModel');      // ← Cart model’i eklendi
+const Cart = require('./../models/cartModel');      // ← Cart model'i eklendi
 const catchAsync = require('../utils/catchAsync');
 const jwt = require('jsonwebtoken');
 
 // JWT oluşturma
-const signToken = (userId, userEmail) => {
-
-// Token üretme fonksiyonu: Payload içerisine id, email ve role ekleniyor.
 const signToken = (userId, userEmail, userRole) => {
   return jwt.sign(
-    { id: userId, email: userEmail },
-    process.env.JWT_SECRET,
-    { expiresIn: '1h' } // 1 saat geçerli
     { id: userId, email: userEmail, role: userRole },
     process.env.JWT_SECRET,
     { expiresIn: '1h' }
@@ -23,8 +17,6 @@ const signToken = (userId, userEmail, userRole) => {
 // Kayıt (signup) fonksiyonu
 
 exports.signup = catchAsync(async (req, res, next) => {
-  const newUser = await User.create(req.body);
-  const token = signToken(newUser._id, newUser.email);
   req.body.email = req.body.email.toLowerCase();
   const emailParts = req.body.email.split('@');
   const domain = emailParts.length === 2 ? emailParts[1] : '';
@@ -55,7 +47,6 @@ exports.login = catchAsync(async (req, res, next) => {
   const guestCartIdFromHeader = req.headers.cartid;
 
   // Email ve şifre kontrolü
-  const { email, password } = req.body;
   if (!email || !password) {
     return res.status(400).json({
       status: 'fail',
@@ -65,7 +56,6 @@ exports.login = catchAsync(async (req, res, next) => {
 
   const normalizedEmail = email.toLowerCase();
   const user = await User.findOne({ email: normalizedEmail });
-  const user = await User.findOne({ email });
   if (!user || user.password !== password) {
     return res.status(401).json({
       status: 'fail',
@@ -74,7 +64,7 @@ exports.login = catchAsync(async (req, res, next) => {
   }
 
   // Token üretimi
-  const token = signToken(user._id, user.email);
+  const token = signToken(user._id, user.email, user.role);
 
   // Guest sepetin user sepetine merge edilmesi
   const guestCartId = guestCartIdFromHeader || guestCartIdFromBody;
@@ -105,7 +95,6 @@ exports.login = catchAsync(async (req, res, next) => {
   }
 
   // Başarılı login yanıtı
-  const token = signToken(user._id, user.email, user.role);
   res.status(200).json({
     status: 'success',
     message: 'Logged in successfully, and any guest cart merged!',
