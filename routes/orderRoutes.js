@@ -4,8 +4,16 @@ const router = express.Router();
 const orderController = require('../controllers/orderController');
 const authMiddleware  = require('../middleware/authMiddleware');
 
+// Tüm order rotaları için auth middleware devrede
 router.use(authMiddleware);
+
+// Sipariş oluşturma (checkout)
 router.post('/checkout', orderController.checkout);
-router.get('/',           orderController.getOrders);
+
+// Kullanıcı sipariş geçmişi
+router.get('/', orderController.getOrders);
+
+// Sipariş durumu güncelleme (processing, in-transit, delivered)
+router.patch('/:id/status', orderController.updateOrderStatus);
 
 module.exports = router;

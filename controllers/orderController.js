@@ -98,3 +98,32 @@ exports.getOrders = catchAsync(async (req, res, next) => {
   const orders = await Order.find({ user: req.user.id }).populate('items.product');
   res.status(200).json({ status: 'success', data: orders });
 });
+
+//da
+// 3) Sipariş durumunu güncelleme:
+exports.updateOrderStatus = catchAsync(async (req, res, next) => {
+  const { id } = req.params;             // URL’den gelen order ID
+  const { status } = req.body;           // body’deki yeni durum
+
+  // Geçerli bir durum mu?
+  if (!['processing', 'in-transit', 'delivered'].includes(status)) {
+    return res.status(400).json({
+      status: 'fail',
+      message: 'Invalid status value'
+    });
+  }
+
+  // Order’ı bul ve güncelle
+  const order = await Order.findByIdAndUpdate(
+    id,
+    { status },
+    { new: true, runValidators: true }
+  ).populate('items.product');
+
+  if (!order) {
+    return res.status(404).json({ status: 'fail', message: 'Order not found' });
+  }
+
+  res.status(200).json({ status: 'success', data: order });
+});
+
