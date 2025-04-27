@@ -2,12 +2,14 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const app = express();
+const path = require('path'); 
 
 // CORS middleware
 app.use(cors({
   origin: 'http://localhost:5173', // Your frontend URL
   credentials: true
 }));
+
 
 // Veritabanı bağlantısı
 require('./config/db');
@@ -26,18 +28,23 @@ app.use('/api/user', userRouter);
 // Kategori ve ürün rotaları
 const categoryRoutes = require('./routes/categoryRoutes');
 app.use('/api/categories', categoryRoutes);
+// ——————————————————————————————————————————————————————————————
+// Aşağıdaki satır eklendi, böylece frontend’imiz /api/v1/categories’den de kategori çekebilir:
+app.use('/api/v1/categories', categoryRoutes);
+// ——————————————————————————————————————————————————————————————
 
 const productRoutes = require('./routes/productRoutes');
 app.use('/api/products', productRoutes);
 
 const reviewRoutes = require('./routes/reviewRoutes');
 app.use('/api/reviews', reviewRoutes);
-// app.js içinde
 
 // Sepet (Cart) rotaları
 const cartRoutes = require('./routes/cartRoutes');
 app.use('/api/cart', cartRoutes);
 
+
+app.use('/invoices', express.static(path.join(__dirname, 'invoices')));
 // Ana rota
 app.get('/', (req, res) => {
   res.send('Hello from the server side');

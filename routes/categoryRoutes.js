@@ -1,11 +1,19 @@
 const express = require('express');
+const {
+  createCategory,
+  getAllCategories,
+  getProductsByCategory
+} = require('../controllers/categoryController');
+
 const router = express.Router();
-const categoryController = require('../controllers/categoryController');
 
-// Kategori oluşturma (POST /api/categories)
-router.post('/', categoryController.createCategory);
+router
+  .route('/')
+  .post(createCategory)      // POST   /api/categories
+  .get(getAllCategories);    // GET    /api/categories
 
-// Belirli bir kategoriye ait ürünleri listeleme (GET /api/categories/:id/products)
-router.get('/:id/products', categoryController.getProductsByCategory);
+router
+  .route('/:id/products')
+  .get(getProductsByCategory); // GET   /api/categories/:id/products
 
 module.exports = router;
