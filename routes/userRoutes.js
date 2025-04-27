@@ -4,10 +4,16 @@ const router = express.Router();
 const userController = require('../controllers/userController');
 const authMiddleware = require('../middleware/authMiddleware');
 
-// GET /api/user/profile
-router.get('/profile', authMiddleware, userController.getProfile);
+// Tüm rotaları auth ile koruyacağız
+router.use(authMiddleware);
 
-// PUT /api/user/address
-router.put('/address', authMiddleware, userController.updateAddress);
+// Kullanıcı profil endpoint: GET /api/user/profile
+router.get('/profile', userController.getProfile);
+
+// Kullanıcı adres güncelleme: PUT /api/user/address
+router.put('/address', userController.updateAddress);
+
+// Utility route to check and fix address
+router.get('/check-address', userController.checkAndFixAddress);
 
 module.exports = router;

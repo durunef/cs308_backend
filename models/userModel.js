@@ -31,9 +31,9 @@ const userSchema = new mongoose.Schema(
       }
     },
     address: {
-      street: { type: String, default: ' ' },
-      city: { type: String, default: ' ' },
-      postalCode: { type: String, default: ' ' }
+      street: { type: String, default: '' },
+      city: { type: String, default: '' },
+      postalCode: { type: String, default: '' }
     },
     // Rol alanı: Email domainine göre admin atanacak; aksi halde varsayılan "user"
     role: {

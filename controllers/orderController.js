@@ -6,6 +6,7 @@ const Order = require('../models/orderModel');
 const Cart = require('../models/cartModel');
 const Product = require('../models/productModel');
 const catchAsync = require('../utils/catchAsync');
+const User = require('../models/userModel');
 
 // 1) Checkout: sepeti siparişe çevir, stokları düş, PDF fatura oluştur, e‑posta at.
 exports.checkout = catchAsync(async (req, res, next) => {
@@ -15,7 +16,35 @@ exports.checkout = catchAsync(async (req, res, next) => {
     return res.status(400).json({ status: 'fail', message: 'Cart is empty.' });
   }
 
-  // (2) Toplamı ve order.items’ı hazırlayalım
+  // Get user data for shipping address
+  const user = await User.findById(req.user.id);
+  
+  // Check if user exists
+  if (!user) {
+    return res.status(404).json({ 
+      status: 'fail', 
+      message: 'User not found.' 
+    });
+  }
+  
+  // Check if address object exists
+  if (!user.address) {
+    return res.status(400).json({ 
+      status: 'fail', 
+      message: 'Address information is missing. Please update your profile before checkout.' 
+    });
+  }
+  
+  // Check if all required address fields are filled out
+  const { street, city, postalCode } = user.address;
+  if (!street || street.trim() === '' || !city || city.trim() === '' || !postalCode || postalCode.trim() === '') {
+    return res.status(400).json({ 
+      status: 'fail', 
+      message: 'Please complete your address information in your profile before checkout.' 
+    });
+  }
+
+  // (2) Toplamı ve order.items'ı hazırlayalım
   let total = 0;
   const orderItems = cart.items.map(i => {
     total += i.product.price * i.quantity;
@@ -30,7 +59,12 @@ exports.checkout = catchAsync(async (req, res, next) => {
   const order = await Order.create({
     user: req.user.id,
     items: orderItems,
-    total
+    total,
+    shippingAddress: {
+      street: street.trim(),
+      city: city.trim(),
+      postalCode: postalCode.trim()
+    }
   });
 
   // (4) Stokları güncelle
@@ -58,6 +92,15 @@ exports.checkout = catchAsync(async (req, res, next) => {
   doc.fontSize(16).text(`Invoice for Order ${order._id}`, { underline: true });
   doc.moveDown().fontSize(12).text(`Date: ${new Date().toLocaleString()}`);
   doc.moveDown();
+  
+  // Add shipping address to invoice
+  doc.fontSize(14).text('Shipping Address:', { underline: true });
+  doc.fontSize(12).text(`${user.name}`);
+  doc.text(`${order.shippingAddress.street}`);
+  doc.text(`${order.shippingAddress.city}, ${order.shippingAddress.postalCode}`);
+  doc.moveDown();
+  
+  doc.fontSize(14).text('Order Items:', { underline: true });
   order.items.forEach(it => {
     doc.text(`• ${it.quantity} × ${it.priceAtPurchase.toFixed(2)} (product ${it.product})`);
   });
@@ -93,7 +136,7 @@ exports.checkout = catchAsync(async (req, res, next) => {
   });
 });
 
-// 2) Kullanıcı “order history” sayfası için:
+// 2) Kullanıcı "order history" sayfası için:
 exports.getOrders = catchAsync(async (req, res, next) => {
   const orders = await Order.find({ user: req.user.id }).populate('items.product');
   res.status(200).json({ status: 'success', data: orders });
@@ -102,8 +145,8 @@ exports.getOrders = catchAsync(async (req, res, next) => {
 //da
 // 3) Sipariş durumunu güncelleme:
 exports.updateOrderStatus = catchAsync(async (req, res, next) => {
-  const { id } = req.params;             // URL’den gelen order ID
-  const { status } = req.body;           // body’deki yeni durum
+  const { id } = req.params;             // URL'den gelen order ID
+  const { status } = req.body;           // body'deki yeni durum
 
   // Geçerli bir durum mu?
   if (!['processing', 'in-transit', 'delivered'].includes(status)) {
@@ -113,7 +156,7 @@ exports.updateOrderStatus = catchAsync(async (req, res, next) => {
     });
   }
 
-  // Order’ı bul ve güncelle
+  // Order'ı bul ve güncelle
   const order = await Order.findByIdAndUpdate(
     id,
     { status },
