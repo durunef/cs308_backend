@@ -97,8 +97,16 @@ exports.login = catchAsync(async (req, res, next) => {
   // Başarılı login yanıtı
   res.status(200).json({
     status: 'success',
-    message: 'Logged in successfully, and any guest cart merged!',
     message: 'Logged in successfully',
-    token
+    token,
+    data: {
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        address: user.address
+      }
+    }
   });
 });

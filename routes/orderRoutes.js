@@ -13,6 +13,9 @@ router.post('/checkout', orderController.checkout);
 // Kullanıcı sipariş geçmişi
 router.get('/', orderController.getOrders);
 
+// For compatibility with frontend calling /history
+router.get('/history', orderController.getOrders);
+
 // Sipariş durumu güncelleme (processing, in-transit, delivered)
 router.patch('/:id/status', orderController.updateOrderStatus);
 

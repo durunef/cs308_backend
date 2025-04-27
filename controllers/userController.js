@@ -4,16 +4,22 @@ const catchAsync = require('../utils/catchAsync');
 const validator = require('validator');
 
 exports.getProfile = catchAsync(async (req, res, next) => {
+  // Log the user ID from the token for debugging
+  console.log('Getting profile for user with ID:', req.user.id);
+  
   // Find the user by ID and exclude sensitive information
   const user = await User.findById(req.user.id).select('-password -passwordConfirm -__v');
 
   if (!user) {
+    console.log('User not found with ID:', req.user.id);
     return res.status(404).json({
       status: 'fail',
       message: 'User not found'
     });
   }
 
+  console.log('User found:', user.name, user.email);
+  
   res.status(200).json({
     status: 'success',
     data: {
@@ -60,6 +66,42 @@ exports.updateAddress = catchAsync(async (req, res, next) => {
     status: 'success',
     data: {
       user: updatedUser
+    }
+  });
+});
+
+// Utility function to check and fix user address
+exports.checkAndFixAddress = catchAsync(async (req, res, next) => {
+  const user = await User.findById(req.user.id);
+  
+  if (!user) {
+    return res.status(404).json({
+      status: 'fail',
+      message: 'User not found'
+    });
+  }
+
+  // Check if address is null or undefined
+  if (!user.address) {
+    // Initialize address with empty strings
+    user.address = {
+      street: '',
+      city: '',
+      postalCode: ''
+    };
+    await user.save();
+  }
+
+  res.status(200).json({
+    status: 'success',
+    message: 'Address checked and fixed if needed',
+    data: {
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        address: user.address
+      }
     }
   });
 });
