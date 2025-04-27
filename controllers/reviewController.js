@@ -2,7 +2,19 @@
 
 const Review = require('../models/reviewModel');
 const Product = require('../models/productModel');
+const Order    = require('../models/orderModel');
 const catchAsync = require('../utils/catchAsync');
+
+
+/* Helper: ürün teslim edildi mi?                                     */
+const hasUserReceivedProduct = async (userId, productId) => {
+  const order = await Order.findOne({
+    user   : userId,
+    status : 'delivered',          // teslim edilmiş sipariş
+    'items.product': productId
+  });
+  return !!order;                  // true / false
+};
 
 // CREATE REVIEW: POST /api/products/:id/reviews
 exports.createReview = catchAsync(async (req, res, next) => {
@@ -13,6 +25,25 @@ exports.createReview = catchAsync(async (req, res, next) => {
   // Örneğin, hasUserReceivedProduct(productId, userId)
 //bodyde ne yazman gerektiği
   const { rating, comment } = req.body;
+
+
+   /* 1) Ürün teslim edilmiş mi? */
+   const received = await hasUserReceivedProduct(userId, productId);
+   if (!received) {
+     return res.status(400).json({
+       status : 'fail',
+       message: 'You can review only products that have been delivered to you.'
+     });
+   }
+
+  /* 2) Rating aralığı kontrolü (1-10) */
+  if (rating < 1 || rating > 10) {
+    return res.status(400).json({
+      status : 'fail',
+      message: 'Rating must be between 1 and 10.'
+    });
+  }
+
 
   //mongodb ye kaydetme
   const review = await Review.create({
