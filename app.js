@@ -34,10 +34,6 @@ const reviewRoutes = require('./routes/reviewRoutes');
 app.use('/api/reviews', reviewRoutes);
 // app.js içinde
 
-
-
-
-
 // Sepet (Cart) rotaları
 const cartRoutes = require('./routes/cartRoutes');
 app.use('/api/cart', cartRoutes);

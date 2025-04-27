@@ -86,6 +86,72 @@ exports.addItemToCart = catchAsync(async (req, res, next) => {
 });
 
 /**
+ * POST /api/cart/update
+ * Sepetteki bir ürünün miktarını günceller.
+ * Beklenen payload: { productId: String, quantity: Number }
+ * - Oturumlu kullanıcı: req.user üzerinden sepet aranır.
+ * - Oturumsuz kullanıcı: Headers veya body üzerinden gönderilen cartId ile sepet aranır.
+ */
+exports.updateCartItem = catchAsync(async (req, res, next) => {
+  const { productId, quantity } = req.body;
+  if (!productId || !quantity) {
+    return res
+      .status(400)
+      .json({ status: 'fail', message: "Product id and quantity must be provided" });
+  }
+
+  // 1) Ürünün varlığını ve stok bilgisini al
+  const product = await Product.findById(productId);
+  if (!product) {
+    return res.status(404).json({ status: 'fail', message: "Product not found" });
+  }
+
+  // 2) Mevcut sepeti getir
+  let cart;
+  if (req.user) {
+    cart = await Cart.findOne({ user: req.user.id });
+  } else {
+    const cartId = req.headers.cartid || req.body.cartId;
+    if (!cartId) {
+      return res
+        .status(400)
+        .json({ status: 'fail', message: "No cart provided for guest user" });
+    }
+    cart = await Cart.findById(cartId);
+  }
+
+  if (!cart) {
+    return res.status(404).json({ status: 'fail', message: "Cart not found" });
+  }
+
+  // 3) Sepette ürün var mı kontrol et
+  const existingItemIndex = cart.items.findIndex(item => item.product.toString() === productId);
+  if (existingItemIndex === -1) {
+    return res.status(404).json({ status: 'fail', message: "Product not found in cart" });
+  }
+
+  // 4) Stok kontrolü
+  if (quantity > product.quantityInStock) {
+    return res.status(400).json({
+      status: 'fail',
+      message: `Only ${product.quantityInStock} item(s) available in stock`
+    });
+  }
+
+  // 5) Sepeti güncelle
+  if (quantity <= 0) {
+    // Miktar 0 veya negatifse ürünü sepetten çıkar
+    cart.items.splice(existingItemIndex, 1);
+  } else {
+    // Miktarı güncelle
+    cart.items[existingItemIndex].quantity = quantity;
+  }
+  
+  await cart.save();
+  res.status(200).json({ status: 'success', data: cart });
+});
+
+/**
  * POST /api/cart/remove
  * Sepetten bir ürünü çıkarır.
  * Beklenen payload: { productId: String }
