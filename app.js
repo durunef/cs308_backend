@@ -41,6 +41,10 @@ app.use('/api/products', productRoutes);
 
 const reviewRoutes = require('./routes/reviewRoutes');
 app.use('/api/reviews', reviewRoutes);
+// ——————————————————————————————————————————————————————————————
+// Review rotalarını v1 endpoint'i olarak da ekleyelim
+app.use('/api/v1/reviews', reviewRoutes);
+// ——————————————————————————————————————————————————————————————
 
 // Sepet (Cart) rotaları
 const cartRoutes = require('./routes/cartRoutes');
