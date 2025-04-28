@@ -17,6 +17,9 @@ require('./config/db');
 // Middleware'ler
 app.use(express.json());
 
+// Serve static files from public directory
+app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
+
 // Auth rotaları
 const authRouter = require('./routes/authRoutes');
 app.use('/api/v1/auth', authRouter);
@@ -29,7 +32,7 @@ app.use('/api/user', userRouter);
 const categoryRoutes = require('./routes/categoryRoutes');
 app.use('/api/categories', categoryRoutes);
 // ——————————————————————————————————————————————————————————————
-// Aşağıdaki satır eklendi, böylece frontend’imiz /api/v1/categories’den de kategori çekebilir:
+// Aşağıdaki satır eklendi, böylece frontend'imiz /api/v1/categories'den de kategori çekebilir:
 app.use('/api/v1/categories', categoryRoutes);
 // ——————————————————————————————————————————————————————————————
 
@@ -38,6 +41,10 @@ app.use('/api/products', productRoutes);
 
 const reviewRoutes = require('./routes/reviewRoutes');
 app.use('/api/reviews', reviewRoutes);
+// ——————————————————————————————————————————————————————————————
+// Review rotalarını v1 endpoint'i olarak da ekleyelim
+app.use('/api/v1/reviews', reviewRoutes);
+// ——————————————————————————————————————————————————————————————
 
 // Sepet (Cart) rotaları
 const cartRoutes = require('./routes/cartRoutes');

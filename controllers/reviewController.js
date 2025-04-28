@@ -108,3 +108,25 @@ exports.approveReview = catchAsync(async (req, res, next) => {
     }
   });
 });
+
+// GET PENDING REVIEWS: GET /api/reviews/pending
+exports.getPendingReviews = catchAsync(async (req, res, next) => {
+  // Find reviews that have comments but are not approved yet
+  const pendingReviews = await Review.find({
+    comment: { $exists: true, $ne: '' },
+    approved: false
+  }).populate({
+    path: 'product',
+    select: 'name images'
+  }).populate({
+    path: 'user',
+    select: 'name email'
+  });
+
+  res.status(200).json({
+    status: 'success',
+    data: {
+      pendingReviews
+    }
+  });
+});

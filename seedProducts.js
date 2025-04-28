@@ -190,7 +190,7 @@ async function seedProducts(categoryIds) {
         quantityInStock: 5,
         price: 699.99,
         currency: "USD",
-        image: "/images/welcome.jpg", // Placeholder image
+        image: "/images/espresso_machine.png", // Placeholder image
         warrantyStatus: "valid",
         distributorInfo: "Cafe Electronics Ltd.",
         category: categoryIds[2], // Electronics category
@@ -207,7 +207,7 @@ async function seedProducts(categoryIds) {
         quantityInStock: 0, // Out of stock
         price: 149.99,
         currency: "USD",
-        image: "/images/welcome.jpg", // Placeholder image
+        image: "/images/coffee_grinder.png", // Placeholder image
         warrantyStatus: "valid",
         distributorInfo: "Kitchen Innovations",
         category: categoryIds[2], // Electronics category
@@ -224,7 +224,7 @@ async function seedProducts(categoryIds) {
         quantityInStock: 1, // Only one in stock
         price: 129.99,
         currency: "USD",
-        image: "/images/welcome.jpg", // Placeholder image
+        image: "/images/smart_maker.png", // Placeholder image
         warrantyStatus: "valid",
         distributorInfo: "Smart Home Appliances",
         category: categoryIds[2], // Electronics category
@@ -241,7 +241,7 @@ async function seedProducts(categoryIds) {
         quantityInStock: 12,
         price: 59.99,
         currency: "USD",
-        image: "/images/welcome.jpg", // Placeholder image
+        image: "/images/milk_frother.png", // Placeholder image
         warrantyStatus: "valid",
         distributorInfo: "Barista Essentials",
         category: categoryIds[2], // Electronics category
@@ -260,7 +260,7 @@ async function seedProducts(categoryIds) {
         quantityInStock: 22,
         price: 14.99,
         currency: "USD",
-        image: "/images/turkish.jpg",
+        image: "/images/turkish.png",
         warrantyStatus: "valid",
         distributorInfo: "Istanbul Coffee Merchants",
         category: categoryIds[0], // Coffee category
@@ -277,7 +277,7 @@ async function seedProducts(categoryIds) {
         quantityInStock: 15,
         price: 16.99,
         currency: "USD",
-        image: "/images/turkish_cardamom.jpg",
+        image: "/images/turkish_cardamom.png",
         warrantyStatus: "valid",
         distributorInfo: "Istanbul Coffee Merchants",
         category: categoryIds[0], // Coffee category
@@ -294,7 +294,7 @@ async function seedProducts(categoryIds) {
         quantityInStock: 10,
         price: 17.99,
         currency: "USD",
-        image: "/images/turkish_mastic.jpg",
+        image: "/images/turkish_mastic.png",
         warrantyStatus: "valid",
         distributorInfo: "Istanbul Coffee Merchants",
         category: categoryIds[0], // Coffee category
@@ -311,7 +311,7 @@ async function seedProducts(categoryIds) {
         quantityInStock: 8,
         price: 39.99,
         currency: "USD",
-        image: "/images/cezve.jpg",
+        image: "/images/cezve.png",
         warrantyStatus: "valid",
         distributorInfo: "Turkish Craftsmen Cooperative",
         category: categoryIds[2], // Electronics/Equipment category
@@ -328,7 +328,7 @@ async function seedProducts(categoryIds) {
         quantityInStock: 25,
         price: 16.49,
         currency: "USD",
-        image: "/images/colombian.jpg",
+        image: "/images/colombian.png",
         warrantyStatus: "valid",
         distributorInfo: "South American Imports",
         category: categoryIds[0], // Coffee category
@@ -345,7 +345,7 @@ async function seedProducts(categoryIds) {
         quantityInStock: 5,
         price: 49.99,
         currency: "USD",
-        image: "/images/jamaican.jpg",
+        image: "/images/jamaican.png",
         warrantyStatus: "valid",
         distributorInfo: "Caribbean Coffee Exports",
         category: categoryIds[0], // Coffee category
@@ -362,7 +362,7 @@ async function seedProducts(categoryIds) {
         quantityInStock: 18,
         price: 14.49,
         currency: "USD",
-        image: "/images/chocolate_coffee.jpg",
+        image: "/images/chocolate_coffee.png",
         warrantyStatus: "valid",
         distributorInfo: "Flavor Masters Co.",
         category: categoryIds[0], // Coffee category
@@ -379,7 +379,7 @@ async function seedProducts(categoryIds) {
         quantityInStock: 20,
         price: 14.49,
         currency: "USD",
-        image: "/images/hazelnut.jpg",
+        image: "/images/hazelnut.png",
         warrantyStatus: "valid",
         distributorInfo: "Flavor Masters Co.",
         category: categoryIds[0], // Coffee category
@@ -396,7 +396,7 @@ async function seedProducts(categoryIds) {
         quantityInStock: 22,
         price: 14.49,
         currency: "USD",
-        image: "/images/vanilla.jpg",
+        image: "/images/vanilla.png",
         warrantyStatus: "valid",
         distributorInfo: "Flavor Masters Co.",
         category: categoryIds[0], // Coffee category
@@ -413,7 +413,7 @@ async function seedProducts(categoryIds) {
         quantityInStock: 28,
         price: 15.49,
         currency: "USD",
-        image: "/images/brazilian.jpg",
+        image: "/images/brazilian.png",
         warrantyStatus: "valid",
         distributorInfo: "South American Imports",
         category: categoryIds[0], // Coffee category
@@ -430,7 +430,7 @@ async function seedProducts(categoryIds) {
         quantityInStock: 12,
         price: 59.99,
         currency: "USD",
-        image: "/images/turkish_set.jpg",
+        image: "/images/turkish_set.png",
         warrantyStatus: "valid",
         distributorInfo: "Istanbul Coffee Merchants",
         category: categoryIds[0], // Coffee category
@@ -447,7 +447,7 @@ async function seedProducts(categoryIds) {
         quantityInStock: 14,
         price: 16.99,
         currency: "USD",
-        image: "/images/turkish_caramel.jpg",
+        image: "/images/turkish_caramel.png",
         warrantyStatus: "valid",
         distributorInfo: "Istanbul Coffee Merchants",
         category: categoryIds[0], // Coffee category
@@ -464,7 +464,7 @@ async function seedProducts(categoryIds) {
         quantityInStock: 15,
         price: 29.99,
         currency: "USD",
-        image: "/images/french_press.jpg",
+        image: "/images/french_press.png",
         warrantyStatus: "valid",
         distributorInfo: "Home Brewing Supplies",
         category: categoryIds[2], // Equipment category
@@ -481,7 +481,7 @@ async function seedProducts(categoryIds) {
         quantityInStock: 20,
         price: 17.99,
         currency: "USD",
-        image: "/images/sumatra.jpg",
+        image: "/images/sumatra.png",
         warrantyStatus: "valid",
         distributorInfo: "Pacific Coffee Traders",
         category: categoryIds[0], // Coffee category
@@ -498,7 +498,7 @@ async function seedProducts(categoryIds) {
         quantityInStock: 15,
         price: 16.99,
         currency: "USD",
-        image: "/images/decaf.jpg",
+        image: "/images/decaf.png",
         warrantyStatus: "valid",
         distributorInfo: "South American Imports",
         category: categoryIds[0], // Coffee category
@@ -515,7 +515,7 @@ async function seedProducts(categoryIds) {
         quantityInStock: 18,
         price: 17.49,
         currency: "USD",
-        image: "/images/light_roast.jpg",
+        image: "/images/light_roast.png",
         warrantyStatus: "valid",
         distributorInfo: "African Coffee Imports",
         category: categoryIds[0], // Coffee category
@@ -532,7 +532,7 @@ async function seedProducts(categoryIds) {
         quantityInStock: 25,
         price: 12.99,
         currency: "USD",
-        image: "/images/coldbrew.jpg",
+        image: "/images/coldbrew.png",
         warrantyStatus: "valid",
         distributorInfo: "Modern Coffee Co.",
         category: categoryIds[0], // Coffee category
@@ -549,7 +549,7 @@ async function seedProducts(categoryIds) {
         quantityInStock: 10,
         price: 34.99,
         currency: "USD",
-        image: "/images/turkish_cups.jpg",
+        image: "/images/turkish_cups.png",
         warrantyStatus: "valid",
         distributorInfo: "Turkish Craftsmen Cooperative",
         category: categoryIds[2], // Equipment category
@@ -566,7 +566,7 @@ async function seedProducts(categoryIds) {
         quantityInStock: 20,
         price: 24.99,
         currency: "USD",
-        image: "/images/sampler.jpg",
+        image: "/images/sampler.png",
         warrantyStatus: "valid",
         distributorInfo: "Global Coffee Distributors",
         category: categoryIds[0], // Coffee category
@@ -583,7 +583,7 @@ async function seedProducts(categoryIds) {
         quantityInStock: 8,
         price: 129.99,
         currency: "USD",
-        image: "/images/turkish_machine.jpg",
+        image: "/images/turkish_machine.png",
         warrantyStatus: "valid",
         distributorInfo: "Modern Kitchen Appliances",
         category: categoryIds[2], // Equipment category
