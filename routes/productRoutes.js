@@ -4,12 +4,18 @@ const productController = require('../controllers/productController');
 const reviewController = require('../controllers/reviewController');
 const authMiddleware = require('../middleware/authMiddleware');
 const restrictTo = require('../middleware/restrictTo');
+const upload = require('../middlewares/uploadMiddleware');
 
 // Get all products
 router.get('/', productController.getProducts);
 
 // Ürün ekleme: Yalnızca admin rolüne sahip kullanıcılar bu endpoint'i kullanabilir.
-router.post('/', authMiddleware, restrictTo('admin'), productController.createProduct);
+router.post('/', 
+  authMiddleware, 
+  restrictTo('admin'), 
+  upload.single('image'),
+  productController.createProduct
+);
 
 // Ürün inceleme (review) oluşturma ve listeleme: Tüm giriş yapmış kullanıcılar için.
 router.post('/:id/reviews', authMiddleware, reviewController.createReview);

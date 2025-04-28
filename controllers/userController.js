@@ -105,3 +105,30 @@ exports.checkAndFixAddress = catchAsync(async (req, res, next) => {
     }
   });
 });
+
+// Get user by ID
+exports.getUserById = catchAsync(async (req, res, next) => {
+  // Log the requested user ID for debugging
+  console.log('Getting user with ID:', req.params.userId);
+  
+  // Find the user by ID and exclude sensitive information
+  const user = await User.findById(req.params.userId).select('name email photo -_id');
+
+  if (!user) {
+    console.log('User not found with ID:', req.params.userId);
+    return res.status(404).json({
+      status: 'fail',
+      message: 'User not found'
+    });
+  }
+
+  console.log('User found:', user.name, user.email);
+  
+  res.status(200).json({
+    status: 'success',
+    data: {
+      name: user.name,
+      photo: user.photo
+    }
+  });
+});

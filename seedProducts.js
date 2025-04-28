@@ -86,7 +86,7 @@ async function seedProducts(categoryIds) {
         quantityInStock: 0,  // Product A - out of stock
         price: 15.99,
         currency: "USD",
-        image: "/images/arabica.png",
+        image: "/images/arabica.jpg",
         warrantyStatus: "valid",
         distributorInfo: "Global Coffee Distributors",
         category: categoryIds[0], // Coffee category
@@ -103,7 +103,7 @@ async function seedProducts(categoryIds) {
         quantityInStock: 1,  // Product B - only one in stock
         price: 12.99,
         currency: "USD",
-        image: "/images/robusta.png",
+        image: "/images/robusta.jpg",
         warrantyStatus: "valid",
         distributorInfo: "Premium Coffee Suppliers",
         category: categoryIds[0], // Coffee category
@@ -120,7 +120,7 @@ async function seedProducts(categoryIds) {
         quantityInStock: 15,  // Product C - more than one in stock
         price: 18.99,
         currency: "USD",
-        image: "/images/ethiopian.png",
+        image: "/images/ethiopian.jpg",
         warrantyStatus: "valid",
         distributorInfo: "African Coffee Imports",
         category: categoryIds[0], // Coffee category
@@ -137,7 +137,7 @@ async function seedProducts(categoryIds) {
         quantityInStock: 25,
         price: 16.49,
         currency: "USD",
-        image: "/images/organic.png",
+        image: "/images/organic.jpg",
         warrantyStatus: "valid",
         distributorInfo: "Eco Coffee Co.",
         category: categoryIds[0], // Coffee category
@@ -154,7 +154,7 @@ async function seedProducts(categoryIds) {
         quantityInStock: 18,
         price: 14.99,
         currency: "USD",
-        image: "/images/dark_roast.png",
+        image: "/images/dark_roast.jpg",
         warrantyStatus: "valid",
         distributorInfo: "Italian Coffee Specialists",
         category: categoryIds[0], // Coffee category
@@ -171,7 +171,7 @@ async function seedProducts(categoryIds) {
         quantityInStock: 30,
         price: 13.99,
         currency: "USD",
-        image: "/images/medium_roast.png",
+        image: "/images/medium_roast.jpg",
         warrantyStatus: "valid",
         distributorInfo: "Morning Brews Inc.",
         category: categoryIds[0], // Coffee category

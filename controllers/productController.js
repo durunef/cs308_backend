@@ -15,8 +15,17 @@ exports.getProducts = catchAsync(async (req, res, next) => {
 });
 
 exports.createProduct = catchAsync(async (req, res, next) => {
-  // Gelen verilerle yeni ürün oluşturulur.
-  const newProduct = await Product.create(req.body);
+  // Process image upload
+  const productData = { ...req.body };
+  
+  // If file was uploaded, add the image path to the product data
+  if (req.file) {
+    // Create relative URL path for the image
+    productData.image = `/uploads/${req.file.filename}`;
+  }
+
+  // Create new product with the provided data
+  const newProduct = await Product.create(productData);
 
   res.status(201).json({
     status: 'success',
