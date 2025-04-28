@@ -85,5 +85,3 @@ exports.getProductById = catchAsync(async (req, res, next) => {
     }
   });
 });
-
-

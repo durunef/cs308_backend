@@ -46,8 +46,9 @@ exports.updateAddress = catchAsync(async (req, res, next) => {
     });
   }
 
-  // postal code kontrol ediyorum any i değiştirebilrisn spesifik bir ülkenin postal code u için
-  if (!validator.isPostalCode(postalCode, 'any')) {
+  // Remove strict postal code validation since it's causing problems
+  // Allow any reasonable postal code format
+  if (!postalCode || postalCode.length < 3) {
     return res.status(400).json({ 
       status: 'fail', 
       message: 'Invalid postal code format.' 
