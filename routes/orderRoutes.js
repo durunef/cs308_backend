@@ -2,10 +2,10 @@
 const express = require('express');
 const router = express.Router();
 const orderController = require('../controllers/orderController');
-const authMiddleware  = require('../middleware/authMiddleware');
+const { protect } = require('../middleware/authMiddleware');
 
 // Tüm order rotaları için auth middleware devrede
-router.use(authMiddleware);
+router.use(protect);
 
 // Sipariş oluşturma (checkout)
 router.post('/checkout', orderController.checkout);

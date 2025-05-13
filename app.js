@@ -50,6 +50,9 @@ app.use('/api/v1/reviews', reviewRoutes);
 const cartRoutes = require('./routes/cartRoutes');
 app.use('/api/cart', cartRoutes);
 
+// Wishlist rotaları
+const wishlistRoutes = require('./routes/wishlistRoutes');
+app.use('/api/v1/wishlist', wishlistRoutes);
 
 app.use('/invoices', express.static(path.join(__dirname, 'invoices')));
 // Ana rota

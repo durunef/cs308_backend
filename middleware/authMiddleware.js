@@ -1,17 +1,29 @@
 const jwt = require('jsonwebtoken');
+const User = require('../models/userModel');
+const catchAsync = require('../utils/catchAsync');
+const AppError = require('../utils/appError');
 
-module.exports = (req, res, next) => {
-  const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ error: 'No token provided' });
+exports.protect = catchAsync(async (req, res, next) => {
+  // 1) Getting token and check if it's there
+  let token;
+  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+    token = req.headers.authorization.split(' ')[1];
   }
 
-  const token = authHeader.split(' ')[1];
-  jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
-    if (err) {
-      return res.status(401).json({ error: 'Invalid token' });
-    }
-    req.user = decoded; // decoded nesnesi { id, email, role, iat, exp } şeklinde olmalı.
-    next();
-  });
-};
+  if (!token) {
+    return next(new AppError('You are not logged in! Please log in to get access.', 401));
+  }
+
+  // 2) Verification token
+  const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+  // 3) Check if user still exists
+  const currentUser = await User.findById(decoded.id);
+  if (!currentUser) {
+    return next(new AppError('The user belonging to this token no longer exists.', 401));
+  }
+
+  // Grant access to protected route
+  req.user = currentUser;
+  next();
+});

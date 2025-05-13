@@ -2,10 +2,10 @@
 const express = require('express');
 const router = express.Router();
 const userController = require('../controllers/userController');
-const authMiddleware = require('../middleware/authMiddleware');
+const { protect } = require('../middleware/authMiddleware');
 
 // Protect routes with authentication
-router.use(authMiddleware);
+router.use(protect);
 
 // Specific routes first
 // Kullanıcı profil endpoint: GET /api/user/profile

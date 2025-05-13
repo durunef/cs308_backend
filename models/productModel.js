@@ -31,6 +31,16 @@ const productSchema = new mongoose.Schema(
       required: [true, 'Please provide product price'],
       min: [0, 'Price cannot be negative']
     },
+    discount: {
+      type: Number,
+      default: 0,
+      min: [0, 'Discount cannot be negative'],
+      max: [100, 'Discount cannot exceed 100%']
+    },
+    discountedPrice: {
+      type: Number,
+      default: null
+    },
     currency: {
       type: String,
       default: 'USD'
@@ -66,6 +76,16 @@ const productSchema = new mongoose.Schema(
     timestamps: true
   }
 );
+
+// Calculate discounted price before saving
+productSchema.pre('save', function(next) {
+  if (this.discount > 0) {
+    this.discountedPrice = this.price * (1 - this.discount / 100);
+  } else {
+    this.discountedPrice = null;
+  }
+  next();
+});
 
 const Product = mongoose.model('Product', productSchema);
 module.exports = Product;
