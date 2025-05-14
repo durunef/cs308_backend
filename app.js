@@ -6,7 +6,7 @@ const path = require('path');
 
 // CORS middleware
 app.use(cors({
-  origin: 'http://localhost:5173', // Your frontend URL
+  origin: ['http://localhost:5173', 'http://localhost:5174'], // Allow both frontend ports
   credentials: true
 }));
 

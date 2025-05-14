@@ -5,6 +5,10 @@ const AppError = require('../utils/appError');
 
 // Add product to wishlist
 const addToWishlist = catchAsync(async (req, res, next) => {
+  console.log('Adding to wishlist - User:', req.user);
+  console.log('Adding to wishlist - Request body:', req.body);
+  console.log('Adding to wishlist - Headers:', req.headers);
+  
   const { productId } = req.body;
 
   // Check if product exists
@@ -15,8 +19,8 @@ const addToWishlist = catchAsync(async (req, res, next) => {
 
   // Check if already in wishlist
   const existingWishlistItem = await Wishlist.findOne({
-    user: req.user._id,
-    product: productId
+    userId: req.user._id,
+    productId: productId
   });
 
   if (existingWishlistItem) {
@@ -25,8 +29,8 @@ const addToWishlist = catchAsync(async (req, res, next) => {
 
   // Create wishlist item
   const wishlistItem = await Wishlist.create({
-    user: req.user._id,
-    product: productId,
+    userId: req.user._id,
+    productId: productId,
     lastNotifiedPrice: product.discountedPrice || product.price
   });
 
@@ -43,8 +47,8 @@ const removeFromWishlist = catchAsync(async (req, res, next) => {
   const { productId } = req.params;
 
   const wishlistItem = await Wishlist.findOneAndDelete({
-    user: req.user._id,
-    product: productId
+    userId: req.user._id,
+    productId: productId
   });
 
   if (!wishlistItem) {
@@ -59,9 +63,9 @@ const removeFromWishlist = catchAsync(async (req, res, next) => {
 
 // Get user's wishlist
 const getWishlist = catchAsync(async (req, res, next) => {
-  const wishlist = await Wishlist.find({ user: req.user._id })
+  const wishlist = await Wishlist.find({ userId: req.user._id })
     .populate({
-      path: 'product',
+      path: 'productId',
       select: 'name price discount discountedPrice image description'
     });
 
@@ -81,8 +85,8 @@ const toggleDiscountNotification = catchAsync(async (req, res, next) => {
 
   const wishlistItem = await Wishlist.findOneAndUpdate(
     {
-      user: req.user._id,
-      product: productId
+      userId: req.user._id,
+      productId: productId
     },
     { notifyOnDiscount },
     { new: true }
