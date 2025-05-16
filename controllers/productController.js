@@ -2,6 +2,8 @@
 
 const Product = require('../models/productModel');
 const catchAsync = require('../utils/catchAsync');
+const AppError = require('../utils/appError');
+const Category = require('../models/categoryModel');
 
 exports.getProducts = catchAsync(async (req, res, next) => {
   const products = await Product.find().populate('category', 'name');
@@ -76,6 +78,73 @@ exports.getProductById = catchAsync(async (req, res, next) => {
       status: 'fail',
       message: 'Product not found'
     });
+  }
+
+  res.status(200).json({
+    status: 'success',
+    data: {
+      product
+    }
+  });
+});
+
+// Ürün güncelleme
+exports.updateProduct = catchAsync(async (req, res, next) => {
+  const productData = { ...req.body };
+  
+  // Eğer yeni resim yüklendiyse
+  if (req.file) {
+    productData.image = `/uploads/${req.file.filename}`;
+  }
+
+  const product = await Product.findByIdAndUpdate(
+    req.params.id,
+    productData,
+    { new: true, runValidators: true }
+  );
+
+  if (!product) {
+    return next(new AppError('Product not found', 404));
+  }
+
+  res.status(200).json({
+    status: 'success',
+    data: {
+      product
+    }
+  });
+});
+
+// Ürün silme
+exports.deleteProduct = catchAsync(async (req, res, next) => {
+  const product = await Product.findByIdAndDelete(req.params.id);
+
+  if (!product) {
+    return next(new AppError('Product not found', 404));
+  }
+
+  res.status(204).json({
+    status: 'success',
+    data: null
+  });
+});
+
+// Stok güncelleme
+exports.updateStock = catchAsync(async (req, res, next) => {
+  const { quantityInStock } = req.body;
+
+  if (!quantityInStock || quantityInStock < 0) {
+    return next(new AppError('Please provide a valid stock quantity', 400));
+  }
+
+  const product = await Product.findByIdAndUpdate(
+    req.params.id,
+    { quantityInStock },
+    { new: true, runValidators: true }
+  );
+
+  if (!product) {
+    return next(new AppError('Product not found', 404));
   }
 
   res.status(200).json({

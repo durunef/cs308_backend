@@ -36,3 +36,32 @@ exports.getProductsByCategory = catchAsync(async (req, res, next) => {
     }
   });
 });
+
+
+// Kategori güncelleme
+exports.updateCategory = catchAsync(async (req, res, next) => {
+  const category = await Category.findByIdAndUpdate(
+    req.params.id,
+    req.body,
+    { new: true, runValidators: true }
+  );
+  if (!category) {
+    return res.status(404).json({ status: 'fail', message: 'Category not found' });
+  }
+  res.status(200).json({
+    status: 'success',
+    data: { category }
+  });
+});
+
+// Kategori silme
+exports.deleteCategory = catchAsync(async (req, res, next) => {
+  const category = await Category.findByIdAndDelete(req.params.id);
+  if (!category) {
+    return res.status(404).json({ status: 'fail', message: 'Category not found' });
+  }
+  res.status(204).json({
+    status: 'success',
+    data: null
+  });
+});

@@ -130,3 +130,30 @@ exports.getPendingReviews = catchAsync(async (req, res, next) => {
     }
   });
 });
+
+// Tüm yorumları getir
+exports.getAllReviews = catchAsync(async (req, res, next) => {
+  const reviews = await Review.find()
+    .populate('product', 'name')
+    .populate('user', 'name email');
+  res.status(200).json({
+    status: 'success',
+    results: reviews.length,
+    data: { reviews }
+  });
+});
+
+// Yorumu reddet
+exports.rejectReview = catchAsync(async (req, res, next) => {
+  const reviewId = req.params.reviewId;
+  // Yorumu silmek veya sadece onay durumunu false yapmak isteyebilirsin.
+  // Burada yorumu siliyoruz:
+  const review = await Review.findByIdAndDelete(reviewId);
+  if (!review) {
+    return res.status(404).json({ message: 'Review not found' });
+  }
+  res.status(204).json({
+    status: 'success',
+    data: null
+  });
+});

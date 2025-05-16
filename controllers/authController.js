@@ -25,6 +25,8 @@ exports.signup = catchAsync(async (req, res, next) => {
     req.body.role = 'admin';
   } else if (domain === 'delivery.com') {
     req.body.role = 'delivery';
+  } else if (domain === 'product.com') {
+    req.body.role = 'product-manager';
   } else {
     req.body.role = 'user';
   }
