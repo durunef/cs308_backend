@@ -39,6 +39,9 @@ app.use('/api/v1/categories', categoryRoutes);
 const productRoutes = require('./routes/productRoutes');
 app.use('/api/products', productRoutes);
 
+const salesRoutes   = require('./routes/salesRoutes');
+app.use('/api/sales', salesRoutes);
+
 const reviewRoutes = require('./routes/reviewRoutes');
 app.use('/api/reviews', reviewRoutes);
 // ——————————————————————————————————————————————————————————————
