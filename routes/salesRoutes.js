@@ -15,5 +15,8 @@ router.patch('/price/:productId', salesController.setPrice);
 // PATCH /api/sales/discount/:productId
 router.patch('/discount/:productId', salesController.setDiscount);
 
+// GET /api/sales/invoices?start=YYYY-MM-DD&end=YYYY-MM-DD
+router.get('/invoices', salesController.getInvoicesInRange)
+
 module.exports = router;
 
