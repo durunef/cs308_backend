@@ -61,3 +61,8 @@ router.patch('/reviews/:reviewId/reject', reviewController.rejectReview);
 
 router.get('/invoices', orderController.getAllOrders);
 router.get('/deliveries', orderController.getAllDeliveries);
+
+router.patch(
+  '/deliveries/:id',
+  orderController.updateOrderStatus
+);

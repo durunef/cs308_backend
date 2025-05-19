@@ -1,42 +1,38 @@
 // controllers/reviewController.js
 
-const Review = require('../models/reviewModel');
-const Product = require('../models/productModel');
-const Order    = require('../models/orderModel');
+const Review     = require('../models/reviewModel');
+const Product    = require('../models/productModel');
+const Order      = require('../models/orderModel');
 const catchAsync = require('../utils/catchAsync');
 
-
-/* Helper: ürün teslim edildi mi?                                     */
+/**
+ * Helper: ürün teslim edilmiş mi?
+ */
 const hasUserReceivedProduct = async (userId, productId) => {
   const order = await Order.findOne({
-    user   : userId,
-    status : 'delivered',          // teslim edilmiş sipariş
+    user: userId,
+    status: 'delivered',
     'items.product': productId
   });
-  return !!order;                  // true / false
+  return !!order;
 };
 
-// CREATE REVIEW: POST /api/products/:id/reviews
+// POST /api/products/:id/reviews
 exports.createReview = catchAsync(async (req, res, next) => {
   const productId = req.params.id;
-  const userId = req.user.id; // authMiddleware'dan alınan kullanıcı bilgisi
-
-  // TODO: Ürünün teslim edilmiş olup olmadığını kontrol et.
-  // Örneğin, hasUserReceivedProduct(productId, userId)
-//bodyde ne yazman gerektiği
+  const userId    = req.user.id;
   const { rating, comment } = req.body;
 
+  // 1) Teslim kontrolü
+  const received = await hasUserReceivedProduct(userId, productId);
+  if (!received) {
+    return res.status(400).json({
+      status: 'fail',
+      message: 'You can review only products that have been delivered to you.'
+    });
+  }
 
-   /* 1) Ürün teslim edilmiş mi? */
-   const received = await hasUserReceivedProduct(userId, productId);
-   if (!received) {
-     return res.status(400).json({
-       status : 'fail',
-       message: 'You can review only products that have been delivered to you.'
-     });
-   }
-
-  /* 2) Rating aralığı kontrolü (1-10) */
+  // 2) Rating aralığı
   if (rating < 1 || rating > 10) {
     return res.status(400).json({
       status : 'fail',
@@ -44,116 +40,85 @@ exports.createReview = catchAsync(async (req, res, next) => {
     });
   }
 
-
-  //mongodb ye kaydetme
+  // 3) Kaydet
   const review = await Review.create({
     product: productId,
-    user: userId,
+    user:    userId,
     rating,
     comment
-    // "approved" alanı yukarıdaki default ayara göre ayarlanır
+    // approved: schema default (false)
   });
 
-
-  
   res.status(201).json({
     status: 'success',
-    data: {
-      review
-    }
+    data: { review }
   });
 });
 
-// GET PRODUCT REVIEWS: GET /api/products/:id/reviews
+// GET /api/products/:id/reviews
 exports.getProductReviews = catchAsync(async (req, res, next) => {
   const productId = req.params.id;
+  const reviews   = await Review.find({ product: productId });
 
-  const reviews = await Review.find({ product: productId });
-  
-
-  //********************************************************************** 
-  // Eğer review'da comment varsa ancak onaylanmamışsa, comment alanını boş döndürebiliriz.
-  const processedReviews = reviews.map(review => {
-    const reviewObj = review.toObject();
-    if (reviewObj.comment && !reviewObj.approved) {
-      reviewObj.comment = ''; // veya "Pending approval" şeklinde
-    }
-    return reviewObj;
+  // Onaylanmamış comment’leri gizle
+  const processed = reviews.map(r => {
+    const obj = r.toObject();
+    if (obj.comment && !obj.approved) obj.comment = '';
+    return obj;
   });
-//*************************************************************************
-
 
   res.status(200).json({
     status: 'success',
-    data: {
-      reviews: processedReviews
-    }
+    data: { reviews: processed }
   });
 });
 
-// APPROVE REVIEW: PUT /api/reviews/:reviewId/approve
+// PATCH /api/v1/product-manager/reviews/:reviewId/approve
 exports.approveReview = catchAsync(async (req, res, next) => {
-  const reviewId = req.params.reviewId;
-
-  // Bu endpoint, ürün yöneticisi tarafından kullanılmalıdır.
-  const review = await Review.findByIdAndUpdate(reviewId, { approved: true }, { new: true, runValidators: true });
+  const review = await Review.findByIdAndUpdate(
+    req.params.reviewId,
+    { approved: true },
+    { new: true, runValidators: true }
+  );
   if (!review) {
-    return res.status(404).json({ message: 'Review not found' });
+    return res.status(404).json({ status:'fail', message:'Review not found' });
   }
-
-  res.status(200).json({
-    status: 'success',
-    data: {
-      review
-    }
-  });
+  res.status(200).json({ status:'success', data:{ review } });
 });
 
-// GET PENDING REVIEWS: GET /api/reviews/pending
+// PATCH /api/v1/product-manager/reviews/:reviewId/reject
+exports.rejectReview = catchAsync(async (req, res, next) => {
+  const review = await Review.findByIdAndDelete(req.params.reviewId);
+  if (!review) {
+    return res.status(404).json({ status:'fail', message:'Review not found' });
+  }
+  res.status(204).end();
+});
+
+// GET pending reviews (if you still need it elsewhere)
 exports.getPendingReviews = catchAsync(async (req, res, next) => {
-  // Find reviews that have comments but are not approved yet
-  const pendingReviews = await Review.find({
-    comment: { $exists: true, $ne: '' },
+  const pending = await Review.find({
+    comment: { $exists:true, $ne: '' },
     approved: false
-  }).populate({
-    path: 'product',
-    select: 'name images'
-  }).populate({
-    path: 'user',
-    select: 'name email'
-  });
+  })
+    .populate('product', 'name images')
+    .populate('user',    'name email');
 
   res.status(200).json({
     status: 'success',
-    data: {
-      pendingReviews
-    }
+    data: { pendingReviews: pending }
   });
 });
 
-// Tüm yorumları getir
+// GET ALL reviews (manager console)
 exports.getAllReviews = catchAsync(async (req, res, next) => {
   const reviews = await Review.find()
     .populate('product', 'name')
-    .populate('user', 'name email');
-  res.status(200).json({
-    status: 'success',
-    results: reviews.length,
-    data: { reviews }
-  });
-});
+    .populate('user',    'name email');
 
-// Yorumu reddet
-exports.rejectReview = catchAsync(async (req, res, next) => {
-  const reviewId = req.params.reviewId;
-  // Yorumu silmek veya sadece onay durumunu false yapmak isteyebilirsin.
-  // Burada yorumu siliyoruz:
-  const review = await Review.findByIdAndDelete(reviewId);
-  if (!review) {
-    return res.status(404).json({ message: 'Review not found' });
-  }
-  res.status(204).json({
-    status: 'success',
-    data: null
+  res.status(200).json({
+    status:  'success',
+    results: reviews.length,
+    data:    { reviews }
   });
 });

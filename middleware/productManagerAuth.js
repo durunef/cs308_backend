@@ -1,14 +1,20 @@
 // middleware/productManagerAuth.js
+const catchAsync = require('../utils/catchAsync')
 
-const AppError = require('../utils/appError');
-
-exports.restrictToProductManager = (req, res, next) => {
-  // allow both exact product-manager *and* general-manager
-  if (
-       req.user.role !== 'product-manager' &&
-       req.user.role !== 'general-manager'
-     ) {
-    return next(new AppError('You do not have permission to access this resource', 403));
+// Bu middleware, `protect` ile kimliği doğrulanmış kullanıcının
+// rolünün “product-manager” olup olmadığını kontrol eder.
+function restrictToProductManager(req, res, next) {
+  // authMiddleware’ın eklediği req.user’da rol bilgisi bekliyoruz
+  if (!req.user || req.user.role !== 'product-manager') {
+    return res.status(403).json({
+      status: 'fail',
+      message: 'You do not have permission to access this resource.'
+    })
   }
-  next();
-};
+  next()
+}
+
+// CommonJS export
+module.exports = {
+  restrictToProductManager
+}
