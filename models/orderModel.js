@@ -6,7 +6,8 @@ const orderSchema = new mongoose.Schema({
     {
       product: { type: mongoose.Schema.Types.ObjectId, ref: 'Product', required: true },
       quantity: { type: Number, required: true },
-      priceAtPurchase: { type: Number, required: true }
+      priceAtPurchase: { type: Number, required: true },
+      costAtPurchase: { type: Number, required: true},
     }
   ],
   total: { type: Number, required: true },

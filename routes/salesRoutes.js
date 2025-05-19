@@ -38,5 +38,12 @@ router.get(
     })
   );
 
+
+  // revenue report
+router.get('/reports/revenue', salesController.getRevenueReport);
+
+// kâr/zarar raporu
+router.get('/reports/profit', salesController.getProfitReport);
+
 module.exports = router;
 

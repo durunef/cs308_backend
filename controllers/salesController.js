@@ -105,3 +105,95 @@ exports.getInvoicesInRange = catchAsync(async (req, res, next) => {
     data:    { invoices }
   });
 });
+
+
+
+
+
+exports.getRevenueReport = catchAsync(async (req, res, next) => {
+  const { start, end } = req.query;
+  if (!start || !end) {
+    return res.status(400).json({
+      status: 'fail',
+      message: 'Please provide both start and end date as YYYY-MM-DD'
+    });
+  }
+
+  // UTC bazlı aralığı oluştur
+  const startDate = new Date(`${start}T00:00:00.000Z`);
+  const endDate   = new Date(`${end}T23:59:59.999Z`);
+  if (isNaN(startDate) || isNaN(endDate)) {
+    return res.status(400).json({
+      status: 'fail',
+      message: 'Invalid date format'
+    });
+  }
+
+  // Aggregate pipeline: gün bazında ciro topla
+  const revenueData = await Order.aggregate([
+    { $match: { createdAt: { $gte: startDate, $lte: endDate } } },
+    { $group: {
+        _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
+        revenue: { $sum: '$total' }
+    }},
+    { $sort: { '_id': 1 } }
+  ]);
+
+  // Yanıta uygun formatta dön
+  res.status(200).json({
+    status: 'success',
+    data: {
+      report: revenueData.map(d => ({
+        date: d._id,
+        revenue: d.revenue
+      }))
+    }
+  });
+});
+
+
+
+exports.getProfitReport = catchAsync(async (req, res, next) => {
+  const { start, end } = req.query;
+  if (!start || !end) {
+    return res.status(400).json({
+      status: 'fail',
+      message: 'Please provide both start and end date as YYYY-MM-DD'
+    });
+  }
+  const startDate = new Date(`${start}T00:00:00.000Z`);
+  const endDate   = new Date(`${end}T23:59:59.999Z`);
+  if (isNaN(startDate) || isNaN(endDate)) {
+    return res.status(400).json({
+      status: 'fail',
+      message: 'Invalid date format'
+    });
+  }
+
+  const profitData = await Order.aggregate([
+    { $match: { createdAt: { $gte: startDate, $lte: endDate } } },
+    { $unwind: '$items' },
+    { $group: {
+        _id: { $dateToString: { format: '%Y-%m-%d', date: '$createdAt' } },
+        profit: {
+          $sum: {
+            $multiply: [
+              { $subtract: [ '$items.priceAtPurchase', '$items.costAtPurchase' ] },
+              '$items.quantity'
+            ]
+          }
+        }
+    }},
+    { $sort: { '_id': 1 } }
+  ]);
+
+  res.status(200).json({
+    status: 'success',
+    data: {
+      report: profitData.map(d => ({
+        date:   d._id,
+        profit: d.profit
+      }))
+    }
+  });
+});
