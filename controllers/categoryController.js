@@ -1,5 +1,6 @@
-const Category = require('../models/categoryModel');
-const catchAsync = require('../utils/catchAsync');
+const Category  = require('../models/categoryModel')
+const catchAsync = require('../utils/catchAsync')
+const AppError  = require('../utils/appError')
 
 // Yeni kategori oluşturma
 exports.createCategory = catchAsync(async (req, res, next) => {
@@ -12,13 +13,17 @@ exports.createCategory = catchAsync(async (req, res, next) => {
 
 // Tüm kategorileri listeleme
 exports.getAllCategories = catchAsync(async (req, res, next) => {
-  const categories = await Category.find();
+  const cats = await Category.find()
+  if (!cats) {
+    return next(new AppError('No categories found', 404))
+  }
   res.status(200).json({
     status: 'success',
-    results: categories.length,
-    data: { categories }
-  });
-});
+    data: {
+      categories: cats
+    }
+  })
+})
 
 // Belirli bir kategoriye ait ürünleri listeleme
 exports.getProductsByCategory = catchAsync(async (req, res, next) => {

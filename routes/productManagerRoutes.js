@@ -29,9 +29,11 @@ router.get('/dashboard', (req, res) => {
 });
 
 // Product Management Routes
-router.route('/products')
-  .get(productController.getProducts)  // Tüm ürünleri listele
-  .post(upload.single('image'), productController.createProduct);  // Yeni ürün ekle
+router
+  .route('/products')
+  .get(productController.getProducts)
+  .post(upload.single('image'), productController.createProduct);
+
 
 router.route('/products/:id')
   .get(productController.getProductById)  // Tek ürün detayı
