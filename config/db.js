@@ -1,13 +1,10 @@
 // config/db.js
 const mongoose = require('mongoose');
 
-const DB_URL = 'mongodb://127.0.0.1:27017/ecommerce'; // veya istediğin DB adı
+const DB_URL = process.env.MONGODB_URI || 'mongodb://mongodb:27017/ecommerce';
 
 mongoose
-  .connect(DB_URL, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true
-  })
+  .connect(DB_URL)
   .then(() => {
     console.log('MongoDB connection is successful!');
   })
