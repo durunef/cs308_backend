@@ -12,7 +12,7 @@ const orderSchema = new mongoose.Schema({
   total: { type: Number, required: true },
   status: {
     type: String,
-    enum: ['processing','in-transit','delivered'],
+    enum: ['processing', 'in-transit', 'delivered', 'cancelled'],
     default: 'processing'
   },
   shippingAddress: {
@@ -20,7 +20,15 @@ const orderSchema = new mongoose.Schema({
     city: { type: String, required: true },
     postalCode: { type: String, required: true }
   },
-  createdAt: { type: Date, default: Date.now }
+  cancelledAt: { type: Date },
+  createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now }
+});
+
+// Update the updatedAt timestamp before saving
+orderSchema.pre('save', function(next) {
+  this.updatedAt = Date.now();
+  next();
 });
 
 module.exports = mongoose.model('Order', orderSchema);

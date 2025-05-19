@@ -4,7 +4,7 @@ const router = express.Router();
 const orderController = require('../controllers/orderController');
 const { protect } = require('../middleware/authMiddleware');
 
-// Tüm order rotaları için auth middleware devrede
+// Apply protect middleware to all routes
 router.use(protect);
 
 // Sipariş oluşturma (checkout)
@@ -18,5 +18,10 @@ router.get('/history', orderController.getOrders);
 
 // Sipariş durumu güncelleme (processing, in-transit, delivered)
 router.patch('/:id/status', orderController.updateOrderStatus);
+
+// Order cancellation and refund routes
+router.post('/:orderId/cancel', orderController.cancelOrder);
+router.post('/:orderId/refund', orderController.requestRefund);
+router.get('/refund/:refundId', orderController.getRefundStatus);
 
 module.exports = router;
