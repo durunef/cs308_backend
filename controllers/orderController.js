@@ -179,6 +179,28 @@ exports.updateOrderStatus = catchAsync(async (req, res, next) => {
   res.status(200).json({ status: 'success', data: order });
 });
 
+// Tüm siparişleri/faturaları getir
+exports.getAllOrders = catchAsync(async (req, res, next) => {
+  const orders = await Order.find().populate('user', 'name email').populate('items.product', 'name');
+  res.status(200).json({
+    status: 'success',
+    results: orders.length,
+    data: { orders }
+  });
+});
+
+// Tüm teslimatları getir (in-transit veya delivered)
+exports.getAllDeliveries = catchAsync(async (req, res, next) => {
+  const deliveries = await Order.find({ status: { $in: ['in-transit', 'delivered'] } })
+    .populate('user', 'name email')
+    .populate('items.product', 'name');
+  res.status(200).json({
+    status: 'success',
+    results: deliveries.length,
+    data: { deliveries }
+  });
+});
+
 // Cancel an order
 exports.cancelOrder = async (req, res) => {
   try {

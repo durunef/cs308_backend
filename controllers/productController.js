@@ -1,66 +1,37 @@
 // controllers/productController.js
-
-const Product = require('../models/productModel');
+const Product  = require('../models/productModel');
 const catchAsync = require('../utils/catchAsync');
+const AppError  = require('../utils/appError');
 
+// ─── GET /api/v1/product-manager/products ─────────────────────────────────────
 exports.getProducts = catchAsync(async (req, res, next) => {
-  const products = await Product.find().populate('category', 'name');
-
-  res.status(200).json({
-    status: 'success',
-    data: {
-      products
-    }
-  });
-});
-
-exports.createProduct = catchAsync(async (req, res, next) => {
-  // Process image upload
-  const productData = { ...req.body };
-  
-  // If file was uploaded, add the image path to the product data
-  if (req.file) {
-    // Create relative URL path for the image
-    productData.image = `/uploads/${req.file.filename}`;
-  }
-
-  // Create new product with the provided data
-  const newProduct = await Product.create(productData);
-
-  res.status(201).json({
-    status: 'success',
-    data: {
-      product: newProduct
-    }
-  });
-});
-
-// 2) Ürünleri arama ve sıralama mantığıyla listeleme
-exports.getProducts = catchAsync(async (req, res, next) => {
-  const { search, sort } = req.query;
-  let filter = {};
-
-  if (search) {
+  // 1) build filter
+  const filter = {};
+  if (req.query.search) {
     filter.$or = [
-      { name: { $regex: search, $options: 'i' } },
-      { description: { $regex: search, $options: 'i' } }
+      { name:        { $regex: req.query.search, $options: 'i' } },
+      { description: { $regex: req.query.search, $options: 'i' } }
     ];
   }
 
-  let query = Product.find(filter);
+  // 2) build mongoose query
+  let query = Product.find(filter).populate('category', 'name');
 
-  if (sort) {
-    const [field, order] = sort.split('_');
-    if (field && order && ['price', 'popularity'].includes(field)) {
-      const sortOrder = order === 'asc' ? 1 : -1;
-      query = query.sort({ [field]: sortOrder });
+  // 3) sorting?
+  if (req.query.sort) {
+    const [field, order] = req.query.sort.split('_');
+    if (['price','popularity'].includes(field) && ['asc','desc'].includes(order)) {
+      const dir = order === 'asc' ? 1 : -1;
+      query = query.sort({ [field]: dir });
     }
   }
 
+  // 4) execute
   const products = await query;
 
+  // 5) send response
   res.status(200).json({
-    status: 'success',
+    status:  'success',
     results: products.length,
     data: {
       products
@@ -68,20 +39,78 @@ exports.getProducts = catchAsync(async (req, res, next) => {
   });
 });
 
+// ─── POST /api/v1/product-manager/products ────────────────────────────────────
+exports.createProduct = catchAsync(async (req, res, next) => {
+  const productData = { ...req.body };
+  if (req.file) {
+    productData.image = `/uploads/${req.file.filename}`;
+  }
+  const newProduct = await Product.create(productData);
+  res.status(201).json({
+    status: 'success',
+    data: { product: newProduct }
+  });
+});
+
+// ─── GET /api/v1/product-manager/products/:id ────────────────────────────────
 exports.getProductById = catchAsync(async (req, res, next) => {
-  const product = await Product.findById(req.params.id).populate('category', 'name');
+  const product = await Product.findById(req.params.id)
+                               .populate('category','name');
+  if (!product) {
+    return next(new AppError('No product found with that ID', 404));
+  }
+  res.status(200).json({
+    status: 'success',
+    data: { product }
+  });
+});
+
+// ─── PATCH /api/v1/product-manager/products/:id ──────────────────────────────
+exports.updateProduct = catchAsync(async (req, res, next) => {
+  const updateData = { ...req.body };
+  if (req.file) updateData.image = `/uploads/${req.file.filename}`;
+
+  const product = await Product.findByIdAndUpdate(
+    req.params.id,
+    updateData,
+    { new: true, runValidators: true }
+  );
 
   if (!product) {
-    return res.status(404).json({
-      status: 'fail',
-      message: 'Product not found'
-    });
+    return next(new AppError('No product found with that ID', 404));
   }
 
   res.status(200).json({
     status: 'success',
-    data: {
-      product
-    }
+    data: { product }
+  });
+});
+
+// ─── DELETE /api/v1/product-manager/products/:id ────────────────────────────
+exports.deleteProduct = catchAsync(async (req, res, next) => {
+  const product = await Product.findByIdAndDelete(req.params.id);
+  if (!product) {
+    return next(new AppError('No product found with that ID', 404));
+  }
+  res.status(204).json({ status: 'success', data: null });
+});
+
+// ─── PATCH /api/v1/product-manager/products/:id/stock ────────────────────────
+exports.updateStock = catchAsync(async (req, res, next) => {
+  const { quantityInStock } = req.body;
+  if (quantityInStock == null || quantityInStock < 0) {
+    return next(new AppError('Please provide a valid stock quantity', 400));
+  }
+  const product = await Product.findByIdAndUpdate(
+    req.params.id,
+    { quantityInStock },
+    { new: true, runValidators: true }
+  );
+  if (!product) {
+    return next(new AppError('No product found with that ID', 404));
+  }
+  res.status(200).json({
+    status: 'success',
+    data: { product }
   });
 });

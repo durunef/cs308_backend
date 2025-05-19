@@ -64,6 +64,10 @@ app.get('/', (req, res) => {
 const orderRoutes = require('./routes/orderRoutes');
 app.use('/api/orders', orderRoutes);
 
+// Product Manager rotaları
+const productManagerRoutes = require('./routes/productManagerRoutes');
+app.use('/api/v1/product-manager', productManagerRoutes);
+
 // Global hata yakalama middleware'i
 app.use((err, req, res, next) => {
   console.error(err); // Hata yığınını (stack trace) konsola basıyoruz
