@@ -60,7 +60,8 @@ exports.checkout = catchAsync(async (req, res, next) => {
     return {
       product: i.product._id,
       quantity: i.quantity,
-      priceAtPurchase: i.product.price
+      priceAtPurchase: i.product.price,
+      costAtPurchase: i.product.cost,
     };
   });
 

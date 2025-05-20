@@ -3,6 +3,10 @@ const express = require('express');
 const cors = require('cors');
 const app = express();
 const path = require('path'); 
+const { protect }    = require('./middleware/authMiddleware');
+const restrictTo     = require('./middleware/restrictTo');
+
+
 
 // CORS middleware
 app.use(cors({
@@ -20,6 +24,14 @@ app.use(express.json());
 // Serve static files from public directory
 app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
 app.use('/images', express.static(path.join(__dirname, 'public/images')));
+
+// **YENİ** invoices PDF dosyalarına erişimi koruma
+app.use(
+  '/api/sales/invoices/files',
+  protect,
+  restrictTo('sales-manager'),
+  express.static(path.join(__dirname, 'invoices'))
+);
 
 // Auth rotaları
 const authRouter = require('./routes/authRoutes');
@@ -39,6 +51,9 @@ app.use('/api/v1/categories', categoryRoutes);
 
 const productRoutes = require('./routes/productRoutes');
 app.use('/api/products', productRoutes);
+
+const salesRoutes   = require('./routes/salesRoutes');
+app.use('/api/sales', salesRoutes);
 
 const reviewRoutes = require('./routes/reviewRoutes');
 app.use('/api/reviews', reviewRoutes);
