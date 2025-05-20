@@ -56,11 +56,18 @@ exports.checkout = catchAsync(async (req, res, next) => {
   // (2) Toplamı ve order.items'ı hazırlayalım
   let total = 0;
   const orderItems = cart.items.map(i => {
-    total += i.product.price * i.quantity;
+    // İndirimli fiyat varsa onu, yoksa normal fiyatı kullan
+    const unitPrice = 
+      typeof i.product.discountedPrice === 'number' 
+        ? i.product.discountedPrice 
+        : i.product.price;
+  
+    total += unitPrice * i.quantity;
+  
     return {
-      product: i.product._id,
-      quantity: i.quantity,
-      priceAtPurchase: i.product.price,
+      product:        i.product._id,
+      quantity:       i.quantity,
+      priceAtPurchase: unitPrice,
       costAtPurchase: i.product.cost,
     };
   });
