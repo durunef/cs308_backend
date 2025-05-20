@@ -37,19 +37,40 @@ async function clearExistingData() {
 // Function to seed the user account
 async function seedUser() {
   try {
+    // Create regular user
     const user = {
       name: 'Duru Nef Özmen',
       email: 'duru.ozmen@sabanciuniv.edu',
       password: '111111',
       passwordConfirm: '111111',
-      role: 'user'
+      role: 'user',
+      address: {
+        street: 'Üniversite St.',
+        city: 'Tuzla/İstanbul',
+        postalCode: '34000'
+      }
+    };
+
+    // Create product manager
+    const productManager = {
+      name: 'Product Manager',
+      email: 'coffee@product.com',
+      password: '111111',
+      passwordConfirm: '111111',
+      role: 'product-manager',
+      address: {
+        street: 'Product St.',
+        city: 'Istanbul',
+        postalCode: '34000'
+      }
     };
 
     const createdUser = await User.create(user);
-    console.log('User created successfully');
+    const createdManager = await User.create(productManager);
+    console.log('Users created successfully');
     return createdUser._id;
   } catch (error) {
-    console.error('Error creating user:', error);
+    console.error('Error creating users:', error);
     process.exit(1);
   }
 }
@@ -83,11 +104,11 @@ async function seedOrders(userId) {
         total: products[0].price + products[1].price,
         status: 'delivered',
         shippingAddress: {
-          street: 'cumhuriyet',
-          city: 'istanbul',
-          postalCode: '34876'
+          street: 'Üniversite St.',
+          city: 'Tuzla/İstanbul',
+          postalCode: '34000'
         },
-        createdAt: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000) // 45 days ago
+        createdAt: new Date('2024-04-10') // April 10, 2024
       },
       {
         user: userId,
@@ -106,11 +127,11 @@ async function seedOrders(userId) {
         total: products[2].price + products[3].price,
         status: 'delivered',
         shippingAddress: {
-          street: 'cumhuriyet',
-          city: 'istanbul',
-          postalCode: '34876'
+          street: 'Üniversite St.',
+          city: 'Tuzla/İstanbul',
+          postalCode: '34000'
         },
-        createdAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000) // 15 days ago
+        createdAt: new Date('2024-05-29') // May 29, 2024
       },
       {
         user: userId,
@@ -129,9 +150,9 @@ async function seedOrders(userId) {
         total: products[4].price + products[5].price,
         status: 'processing',
         shippingAddress: {
-          street: 'cumhuriyet',
-          city: 'istanbul',
-          postalCode: '34876'
+          street: 'Üniversite St.',
+          city: 'Tuzla/İstanbul',
+          postalCode: '34000'
         },
         createdAt: new Date() // Current date
       },
@@ -152,9 +173,9 @@ async function seedOrders(userId) {
         total: products[6].price + products[7].price,
         status: 'in-transit',
         shippingAddress: {
-          street: 'cumhuriyet',
-          city: 'istanbul',
-          postalCode: '34876'
+          street: 'Üniversite St.',
+          city: 'Tuzla/İstanbul',
+          postalCode: '34000'
         },
         createdAt: new Date() // Current date
       }

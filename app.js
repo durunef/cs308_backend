@@ -19,6 +19,7 @@ app.use(express.json());
 
 // Serve static files from public directory
 app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
+app.use('/images', express.static(path.join(__dirname, 'public/images')));
 
 // Auth rotaları
 const authRouter = require('./routes/authRoutes');
