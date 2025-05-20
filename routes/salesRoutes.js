@@ -45,5 +45,18 @@ router.get('/reports/revenue', salesController.getRevenueReport);
 // kâr/zarar raporu
 router.get('/reports/profit', salesController.getProfitReport);
 
+
+// 1) Pending refund taleplerini listele
+//    GET /api/sales/refunds
+router.get('/refunds', salesController.getPendingRefunds);
+
+// 2) Onayla (approve) refund
+//    PATCH /api/sales/refunds/:id/approve
+router.patch('/refunds/:id/approve', salesController.approveRefund);
+
+// 3) Reddet (reject) refund
+//    PATCH /api/sales/refunds/:id/reject
+router.patch('/refunds/:id/reject', salesController.rejectRefund);
+
 module.exports = router;
 

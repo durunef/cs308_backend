@@ -1,6 +1,7 @@
 // controllers/salesController.js
 const Product    = require('../models/productModel');
 const Order = require('../models/orderModel');
+const Refund  = require('../models/refundModel');
 const catchAsync = require('../utils/catchAsync');
 
 exports.setPrice = catchAsync(async (req, res, next) => {
@@ -195,5 +196,82 @@ exports.getProfitReport = catchAsync(async (req, res, next) => {
         profit: d.profit
       }))
     }
+  });
+});
+
+
+// 1) Bekleyen (pending) iade taleplerini listele
+exports.getPendingRefunds = catchAsync(async (req, res) => {
+  const refunds = await Refund.find({ status: 'pending' })
+    .populate('order', 'user total')
+    .populate('user', 'name email')
+    .populate('items.product', 'name');
+
+  res.status(200).json({
+    status: 'success',
+    results: refunds.length,
+    data: { refunds }
+  });
+});
+
+
+
+// 2) İade isteğini onayla (approve)
+exports.approveRefund = catchAsync(async (req, res) => {
+  const { id } = req.params;
+  const refund = await Refund.findById(id);
+
+  if (!refund) {
+    return res.status(404).json({ status: 'fail', message: 'Refund request not found' });
+  }
+  if (refund.status !== 'pending') {
+    return res.status(400).json({ status: 'fail', message: 'Refund already processed' });
+  }
+
+  // — Stokları geri ekle
+  for (const item of refund.items) {
+    await Product.findByIdAndUpdate(
+      item.product,
+      { $inc: { quantityInStock: item.quantity } }
+    );
+  }
+
+  // — Durumu güncelle
+  refund.status     = 'approved';
+  refund.approvedAt = Date.now();
+  await refund.save();
+
+  // — (İsteğe bağlı) Müşteriye bildirim gönderme
+  // notifyCustomer(refund.user, `Your refund ${refund._id} has been approved`);
+
+  res.status(200).json({
+    status: 'success',
+    message: 'Refund approved',
+    data: { refund }
+  });
+});
+
+// 3) İade isteğini reddet (reject)
+exports.rejectRefund = catchAsync(async (req, res) => {
+  const { id } = req.params;
+  const refund = await Refund.findById(id);
+
+  if (!refund) {
+    return res.status(404).json({ status: 'fail', message: 'Refund request not found' });
+  }
+  if (refund.status !== 'pending') {
+    return res.status(400).json({ status: 'fail', message: 'Refund already processed' });
+  }
+
+  refund.status     = 'rejected';
+  refund.approvedAt = Date.now(); // karar verme zamanı
+  await refund.save();
+
+  // notifyCustomer(refund.user, `Your refund ${refund._id} has been rejected`);
+
+  res.status(200).json({
+    status: 'success',
+    message: 'Refund rejected',
+    data: { refund }
   });
 });
