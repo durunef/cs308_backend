@@ -3,6 +3,9 @@ const Product    = require('../models/productModel');
 const Order = require('../models/orderModel');
 const Refund  = require('../models/refundModel');
 const catchAsync = require('../utils/catchAsync');
+const Wishlist = require('../models/wishlistModel');
+const { sendEmail } = require('../utils/emailService');
+const Notification = require('../models/notificationModel');
 
 exports.setPrice = catchAsync(async (req, res, next) => {
   const { productId } = req.params;
@@ -67,7 +70,6 @@ exports.setDiscount = catchAsync(async (req, res, next) => {
   });
 });
 
-
 exports.getInvoicesInRange = catchAsync(async (req, res, next) => {
   const { start, end } = req.query;
   if (!start || !end) {
@@ -106,10 +108,6 @@ exports.getInvoicesInRange = catchAsync(async (req, res, next) => {
     data:    { invoices }
   });
 });
-
-
-
-
 
 exports.getRevenueReport = catchAsync(async (req, res, next) => {
   const { start, end } = req.query;
@@ -151,8 +149,6 @@ exports.getRevenueReport = catchAsync(async (req, res, next) => {
     }
   });
 });
-
-
 
 exports.getProfitReport = catchAsync(async (req, res, next) => {
   const { start, end } = req.query;
@@ -199,7 +195,6 @@ exports.getProfitReport = catchAsync(async (req, res, next) => {
   });
 });
 
-
 // 1) Bekleyen (pending) iade taleplerini listele
 exports.getPendingRefunds = catchAsync(async (req, res) => {
   const refunds = await Refund.find({ status: 'pending' })
@@ -213,8 +208,6 @@ exports.getPendingRefunds = catchAsync(async (req, res) => {
     data: { refunds }
   });
 });
-
-
 
 // 2) İade isteğini onayla (approve)
 exports.approveRefund = catchAsync(async (req, res) => {
@@ -273,5 +266,73 @@ exports.rejectRefund = catchAsync(async (req, res) => {
     status: 'success',
     message: 'Refund rejected',
     data: { refund }
+  });
+});
+
+// Notify wishlist users about discount
+exports.notifyDiscount = catchAsync(async (req, res, next) => {
+  const { productId } = req.params;
+  const { discountPercent, originalPrice, newPrice } = req.body;
+
+  // Find all wishlist items for this product with notifications enabled
+  const wishlistItems = await Wishlist.find({
+    productId,
+    notifyOnDiscount: true
+  }).populate('userId', 'email name')
+    .populate('productId', 'name');
+
+  // Create notifications for each user
+  const notifications = wishlistItems.map(async (item) => {
+    try {
+      // Create notification
+      const notification = await Notification.create({
+        userId: item.userId._id,
+        title: 'Price Drop Alert! 🎉',
+        message: `${item.productId.name} has been discounted by ${discountPercent}%! New price: $${newPrice.toFixed(2)} (was $${originalPrice.toFixed(2)})`,
+        type: 'discount',
+        link: `/product/${productId}`,
+        read: false
+      });
+
+      // Send email notification if email service is available
+      if (sendEmail) {
+        await sendEmail({
+          to: item.userId.email,
+          subject: 'Price Drop Alert! 🎉',
+          text: `Hello ${item.userId.name},\n\n` +
+                `A product in your wishlist has been discounted!\n\n` +
+                `Product: ${item.productId.name}\n` +
+                `Original Price: $${originalPrice.toFixed(2)}\n` +
+                `New Price: $${newPrice.toFixed(2)}\n` +
+                `Discount: ${discountPercent}%\n\n` +
+                `Visit our website to check it out!\n\n` +
+                `Best regards,\nYour Coffee Shop Team`
+        });
+      }
+
+      // Update last notified price
+      item.lastNotifiedPrice = newPrice;
+      await item.save();
+
+      return { success: true, userId: item.userId._id, notification };
+    } catch (error) {
+      console.error(`Failed to notify user ${item.userId._id}:`, error);
+      return { success: false, userId: item.userId._id, error: error.message };
+    }
+  });
+
+  // Wait for all notifications to be sent
+  const results = await Promise.all(notifications);
+  const successful = results.filter(r => r.success).length;
+  const failed = results.filter(r => !r.success).length;
+
+  res.status(200).json({
+    status: 'success',
+    data: {
+      totalNotified: wishlistItems.length,
+      successful,
+      failed,
+      notifications: results.filter(r => r.success).map(r => r.notification)
+    }
   });
 });

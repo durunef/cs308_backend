@@ -28,13 +28,13 @@ const productSchema = new mongoose.Schema(
     },
     price: {
       type: Number,
-      required: [true, 'Please provide product price'],
-      min: [0, 'Price cannot be negative']
+      min: [0, 'Price cannot be negative'],
+      default: null
     },
     cost: {
       type: Number,
-      required: [true, 'Please provide product cost'],
       min: [0, 'Cost cannot be negative'],
+      default: null
     },
     discount: {
       type: Number,
@@ -75,6 +75,10 @@ const productSchema = new mongoose.Schema(
     subtype: {
       type: String,
       required: [true, 'Please provide product subtype']
+    },
+    published: {
+      type: Boolean,
+      default: false
     }
   },
   {
@@ -84,13 +88,18 @@ const productSchema = new mongoose.Schema(
 
 // Calculate discounted price before saving
 productSchema.pre('save', function(next) {
-  if (this.discount > 0) {
+  if (this.price && this.discount > 0) {
     this.discountedPrice = this.price * (1 - this.discount / 100);
   } else {
     this.discountedPrice = null;
   }
   next();
 });
+
+// Add a method to check if product is ready for customer view
+productSchema.methods.isReadyForCustomerView = function() {
+  return this.price !== null && this.published;
+};
 
 const Product = mongoose.model('Product', productSchema);
 module.exports = Product;

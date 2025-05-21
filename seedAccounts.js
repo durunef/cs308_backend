@@ -2,16 +2,84 @@ const mongoose = require('mongoose');
 const User = require('./models/userModel');
 const Order = require('./models/orderModel');
 const Product = require('./models/productModel');
+const fs = require('fs');
+const path = require('path');
+const PDFDocument = require('pdfkit');
 
 // MongoDB connection string - update with your actual connection string
 const DB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/ecommerce';
+
+// Create invoices directory if it doesn't exist
+const invoicesDir = path.join(__dirname, 'invoices');
+if (!fs.existsSync(invoicesDir)) {
+  fs.mkdirSync(invoicesDir);
+}
+
+// Function to generate PDF invoice
+async function generateInvoice(order, user, products) {
+  return new Promise((resolve, reject) => {
+    try {
+      const doc = new PDFDocument();
+      const invoicePath = path.join(invoicesDir, `invoice-${order._id}.pdf`);
+      const writeStream = fs.createWriteStream(invoicePath);
+
+      doc.pipe(writeStream);
+
+      // Add content to PDF
+      doc.fontSize(25).text('Invoice', { align: 'center' });
+      doc.moveDown();
+      doc.fontSize(12).text(`Order ID: ${order._id}`);
+      doc.text(`Date: ${order.createdAt.toLocaleDateString()}`);
+      doc.text(`Customer: ${user.name}`);
+      doc.text(`Email: ${user.email}`);
+      doc.moveDown();
+
+      // Add items table
+      doc.text('Items:', { underline: true });
+      doc.moveDown();
+      
+      // Table header
+      doc.text('Product', 50, doc.y, { width: 200 });
+      doc.text('Quantity', 250, doc.y, { width: 100 });
+      doc.text('Price', 350, doc.y, { width: 100 });
+      doc.moveDown();
+
+      // Table rows
+      order.items.forEach(item => {
+        const product = products.find(p => p._id.toString() === item.product.toString());
+        doc.text(product ? product.name : 'Unknown Product', 50, doc.y, { width: 200 });
+        doc.text(item.quantity.toString(), 250, doc.y, { width: 100 });
+        doc.text(`$${item.priceAtPurchase.toFixed(2)}`, 350, doc.y, { width: 100 });
+        doc.moveDown();
+      });
+
+      // Add total
+      doc.moveDown();
+      doc.text(`Total: $${order.total.toFixed(2)}`, { align: 'right' });
+
+      // Finalize PDF
+      doc.end();
+
+      writeStream.on('finish', () => {
+        console.log(`Invoice generated for order ${order._id}`);
+        resolve();
+      });
+
+      writeStream.on('error', (error) => {
+        reject(error);
+      });
+    } catch (error) {
+      reject(error);
+    }
+  });
+}
 
 // Connect to MongoDB with better error handling
 async function connectDB() {
   try {
     await mongoose.connect(DB_URI, {
-      serverSelectionTimeoutMS: 5000, // Timeout after 5s instead of 30s
-      socketTimeoutMS: 45000, // Close sockets after 45s of inactivity
+      serverSelectionTimeoutMS: 5000,
+      socketTimeoutMS: 45000,
     });
     console.log('Connected to MongoDB successfully');
   } catch (err) {
@@ -27,7 +95,16 @@ async function clearExistingData() {
     console.log('Clearing existing users and orders...');
     await User.deleteMany({});
     await Order.deleteMany({});
-    console.log('Cleared existing users and orders');
+    
+    // Clear invoices directory
+    if (fs.existsSync(invoicesDir)) {
+      const files = fs.readdirSync(invoicesDir);
+      for (const file of files) {
+        fs.unlinkSync(path.join(invoicesDir, file));
+      }
+    }
+    
+    console.log('Cleared existing users, orders, and invoices');
   } catch (error) {
     console.error('Error clearing data:', error);
     process.exit(1);
@@ -65,8 +142,24 @@ async function seedUser() {
       }
     };
 
+    // Create sales manager
+    const salesManager = {
+      name: 'Sales Manager',
+      email: 'coffee@sales.com',
+      password: '111111',
+      passwordConfirm: '111111',
+      role: 'sales-manager',
+      address: {
+        street: 'Sales St.',
+        city: 'Istanbul',
+        postalCode: '34000'
+      }
+    };
+
     const createdUser = await User.create(user);
-    const createdManager = await User.create(productManager);
+    const createdProductManager = await User.create(productManager);
+    const createdSalesManager = await User.create(salesManager);
+    
     console.log('Users created successfully');
     return createdUser._id;
   } catch (error) {
@@ -80,6 +173,7 @@ async function seedOrders(userId) {
   try {
     // Get some products from the database
     const products = await Product.find().limit(8);
+    const user = await User.findById(userId);
     
     if (products.length < 8) {
       throw new Error('Not enough products found in the database');
@@ -93,12 +187,14 @@ async function seedOrders(userId) {
           {
             product: products[0]._id,
             quantity: 1,
-            priceAtPurchase: products[0].price
+            priceAtPurchase: products[0].price,
+            costAtPurchase: products[0].price 
           },
           {
             product: products[1]._id,
             quantity: 1,
-            priceAtPurchase: products[1].price
+            priceAtPurchase: products[1].price,
+            costAtPurchase: products[1].price 
           }
         ],
         total: products[0].price + products[1].price,
@@ -108,7 +204,7 @@ async function seedOrders(userId) {
           city: 'Tuzla/İstanbul',
           postalCode: '34000'
         },
-        createdAt: new Date('2024-04-10') // April 10, 2024
+        createdAt: new Date('2024-04-10')
       },
       {
         user: userId,
@@ -116,12 +212,14 @@ async function seedOrders(userId) {
           {
             product: products[2]._id,
             quantity: 1,
-            priceAtPurchase: products[2].price
+            priceAtPurchase: products[2].price,
+            costAtPurchase: products[2].price  
           },
           {
             product: products[3]._id,
             quantity: 1,
-            priceAtPurchase: products[3].price
+            priceAtPurchase: products[3].price,
+            costAtPurchase: products[3].price 
           }
         ],
         total: products[2].price + products[3].price,
@@ -131,7 +229,7 @@ async function seedOrders(userId) {
           city: 'Tuzla/İstanbul',
           postalCode: '34000'
         },
-        createdAt: new Date('2024-05-29') // May 29, 2024
+        createdAt: new Date('2024-05-29')
       },
       {
         user: userId,
@@ -139,12 +237,14 @@ async function seedOrders(userId) {
           {
             product: products[4]._id,
             quantity: 1,
-            priceAtPurchase: products[4].price
+            priceAtPurchase: products[4].price,
+            costAtPurchase: products[4].price
           },
           {
             product: products[5]._id,
             quantity: 1,
-            priceAtPurchase: products[5].price
+            priceAtPurchase: products[5].price,
+            costAtPurchase: products[5].price 
           }
         ],
         total: products[4].price + products[5].price,
@@ -154,7 +254,7 @@ async function seedOrders(userId) {
           city: 'Tuzla/İstanbul',
           postalCode: '34000'
         },
-        createdAt: new Date() // Current date
+        createdAt: new Date()
       },
       {
         user: userId,
@@ -162,12 +262,14 @@ async function seedOrders(userId) {
           {
             product: products[6]._id,
             quantity: 1,
-            priceAtPurchase: products[6].price
+            priceAtPurchase: products[6].price,
+            costAtPurchase: products[6].price 
           },
           {
             product: products[7]._id,
             quantity: 1,
-            priceAtPurchase: products[7].price
+            priceAtPurchase: products[7].price,
+            costAtPurchase: products[7].price 
           }
         ],
         total: products[6].price + products[7].price,
@@ -177,14 +279,20 @@ async function seedOrders(userId) {
           city: 'Tuzla/İstanbul',
           postalCode: '34000'
         },
-        createdAt: new Date() // Current date
+        createdAt: new Date()
       }
     ];
 
-    await Order.insertMany(orders);
+    const createdOrders = await Order.insertMany(orders);
     console.log('Orders created successfully');
+
+    // Generate invoices for each order
+    for (const order of createdOrders) {
+      await generateInvoice(order, user, products);
+    }
+    console.log('Invoices generated successfully');
   } catch (error) {
-    console.error('Error creating orders:', error);
+    console.error('Error creating orders or generating invoices:', error);
     process.exit(1);
   }
 }

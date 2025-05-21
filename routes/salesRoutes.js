@@ -8,9 +8,11 @@ const catchAsync     = require('../utils/catchAsync');
 const path           = require('path');    
 const fs             = require('fs');   
 
-// 1) Global olarak tüm sales rotalarında önce authenticate + authorize
-router.use(protect, restrictTo('sales-manager'));
+// Protect all routes
+router.use(protect);
 
+// Restrict to sales manager
+router.use(restrictTo('sales-manager'));
 
 // PATCH /api/sales/price/:productId
 router.patch('/price/:productId', salesController.setPrice);
@@ -21,8 +23,7 @@ router.patch('/discount/:productId', salesController.setDiscount);
 // GET /api/sales/invoices?start=YYYY-MM-DD&end=YYYY-MM-DD
 router.get('/invoices', salesController.getInvoicesInRange)
 
-
-// PDF’i download olarak indirtmek için
+// PDF'i download olarak indirtmek için
 router.get(
     '/invoices/:orderId/download',
     catchAsync(async (req, res, next) => {
@@ -38,17 +39,15 @@ router.get(
     })
   );
 
-
-  // revenue report
-router.get('/reports/revenue', salesController.getRevenueReport);
+// revenue report
+router.get('/revenue', salesController.getRevenueReport);
 
 // kâr/zarar raporu
-router.get('/reports/profit', salesController.getProfitReport);
-
+router.get('/profit', salesController.getProfitReport);
 
 // 1) Pending refund taleplerini listele
 //    GET /api/sales/refunds
-router.get('/refunds', salesController.getPendingRefunds);
+router.get('/refunds/pending', salesController.getPendingRefunds);
 
 // 2) Onayla (approve) refund
 //    PATCH /api/sales/refunds/:id/approve
@@ -57,6 +56,10 @@ router.patch('/refunds/:id/approve', salesController.approveRefund);
 // 3) Reddet (reject) refund
 //    PATCH /api/sales/refunds/:id/reject
 router.patch('/refunds/:id/reject', salesController.rejectRefund);
+
+router
+  .route('/discount/:productId')
+  .post(salesController.notifyDiscount);
 
 module.exports = router;
 

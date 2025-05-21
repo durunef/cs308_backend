@@ -53,7 +53,9 @@ const productRoutes = require('./routes/productRoutes');
 app.use('/api/products', productRoutes);
 
 const salesRoutes   = require('./routes/salesRoutes');
+const notificationRoutes = require('./routes/notificationRoutes');
 app.use('/api/sales', salesRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 const reviewRoutes = require('./routes/reviewRoutes');
 app.use('/api/reviews', reviewRoutes);

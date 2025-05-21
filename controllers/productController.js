@@ -42,10 +42,19 @@ exports.getProducts = catchAsync(async (req, res, next) => {
 // ─── POST /api/v1/product-manager/products ────────────────────────────────────
 exports.createProduct = catchAsync(async (req, res, next) => {
   const productData = { ...req.body };
+  
+  // Handle image upload
   if (req.file) {
     productData.image = `/uploads/${req.file.filename}`;
   }
+  
+  // Ensure price and cost are null if not provided
+  if (!productData.price) productData.price = null;
+  if (!productData.cost) productData.cost = null;
+  
+  // Create the product
   const newProduct = await Product.create(productData);
+  
   res.status(201).json({
     status: 'success',
     data: { product: newProduct }
