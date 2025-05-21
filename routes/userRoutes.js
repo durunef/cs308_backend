@@ -17,6 +17,9 @@ router.put('/address', userController.updateAddress);
 // Utility route to check and fix address
 router.get('/check-address', userController.checkAndFixAddress);
 
+// Get user's purchased products
+router.get('/:userId/purchased-products', userController.getPurchasedProducts);
+
 // Parameterized route should come after specific routes
 // Make the user by ID route public (no auth required)
 router.get('/:userId', (req, res, next) => {

@@ -8,7 +8,7 @@ const { protect } = require('../middleware/authMiddleware');
 router.use(protect);
 
 // Sipariş oluşturma (checkout)
-router.post('/checkout', orderController.checkout);
+router.post('/order/checkout', orderController.checkout);
 
 // Kullanıcı sipariş geçmişi
 router.get('/', orderController.getOrders);

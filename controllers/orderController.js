@@ -19,138 +19,251 @@ try {
 
 // 1) Checkout: sepeti siparişe çevir, stokları düş, PDF fatura oluştur, e‑posta at.
 exports.checkout = catchAsync(async (req, res, next) => {
-  // (1) Kullanıcı sepete bak
-  const cart = await Cart.findOne({ user: req.user.id }).populate('items.product');
-  if (!cart || cart.items.length === 0) {
-    return res.status(400).json({ status: 'fail', message: 'Cart is empty.' });
-  }
-
-  // Get user data for shipping address
-  const user = await User.findById(req.user.id);
+  console.log('Starting checkout process...');
   
-  // Check if user exists
-  if (!user) {
-    return res.status(404).json({ 
-      status: 'fail', 
-      message: 'User not found.' 
-    });
-  }
-  
-  // Check if address object exists
-  if (!user.address) {
-    return res.status(400).json({ 
-      status: 'fail', 
-      message: 'Address information is missing. Please update your profile before checkout.' 
-    });
-  }
-  
-  // Check if all required address fields are filled out
-  const { street, city, postalCode } = user.address;
-  if (!street || street.trim() === '' || !city || city.trim() === '' || !postalCode || postalCode.trim() === '') {
-    return res.status(400).json({ 
-      status: 'fail', 
-      message: 'Please complete your address information in your profile before checkout.' 
-    });
-  }
-
-  // (2) Toplamı ve order.items'ı hazırlayalım
-  let total = 0;
-  const orderItems = cart.items.map(i => {
-    // İndirimli fiyat varsa onu, yoksa normal fiyatı kullan
-    const unitPrice = 
-      typeof i.product.discountedPrice === 'number' 
-        ? i.product.discountedPrice 
-        : i.product.price;
-  
-    total += unitPrice * i.quantity;
-  
-    return {
-      product:        i.product._id,
-      quantity:       i.quantity,
-      priceAtPurchase: unitPrice,
-      costAtPurchase: i.product.cost,
-    };
-  });
-
-  // (3) Siparişi kaydet
-  const order = await Order.create({
-    user: req.user.id,
-    items: orderItems,
-    total,
-    shippingAddress: {
-      street: street.trim(),
-      city: city.trim(),
-      postalCode: postalCode.trim()
+  try {
+    // (1) Kullanıcı sepete bak
+    const cart = await Cart.findOne({ user: req.user.id }).populate('items.product');
+    if (!cart || cart.items.length === 0) {
+      return res.status(400).json({ status: 'fail', message: 'Cart is empty.' });
     }
-  });
 
-  // (4) Stokları güncelle
-  await Promise.all(orderItems.map(async item => {
-    const p = await Product.findById(item.product);
-    p.quantityInStock -= item.quantity;
-    return p.save();
-  }));
+    console.log('Cart found:', cart._id);
 
-  // (5) Sepeti temizle
-  cart.items = [];
-  await cart.save();
+    // Get user data for shipping address
+    const user = await User.findById(req.user.id);
+    
+    // Check if user exists
+    if (!user) {
+      return res.status(404).json({ 
+        status: 'fail', 
+        message: 'User not found.' 
+      });
+    }
+    
+    console.log('User found:', user._id);
+    
+    // Check if address object exists
+    if (!user.address) {
+      return res.status(400).json({ 
+        status: 'fail', 
+        message: 'Address information is missing. Please update your profile before checkout.' 
+      });
+    }
+    
+    // Check if all required address fields are filled out
+    const { street, city, postalCode } = user.address;
+    if (!street || street.trim() === '' || !city || city.trim() === '' || !postalCode || postalCode.trim() === '') {
+      return res.status(400).json({ 
+        status: 'fail', 
+        message: 'Please complete your address information in your profile before checkout.' 
+      });
+    }
 
-  // (6) PDF fatura oluştur ve diske yaz
-  const doc = new PDFDocument();
-  const filename = `invoice-${order._id}.pdf`;
-  const invoicesDir = path.join(__dirname, '../invoices');
-  if (!fs.existsSync(invoicesDir)) {
-    fs.mkdirSync(invoicesDir, { recursive: true });
+    // (2) Toplamı ve order.items'ı hazırlayalım
+    let total = 0;
+    const orderItems = cart.items.map(i => {
+      // İndirimli fiyat varsa onu, yoksa normal fiyatı kullan
+      const unitPrice = 
+        typeof i.product.discountedPrice === 'number' 
+          ? i.product.discountedPrice 
+          : i.product.price;
+    
+      total += unitPrice * i.quantity;
+    
+      return {
+        product: i.product._id,
+        quantity: i.quantity,
+        priceAtPurchase: unitPrice,
+        // If cost is not available, use the price as cost
+        costAtPurchase: i.product.cost || unitPrice
+      };
+    });
+
+    console.log('Order items prepared, total:', total);
+
+    // (3) Siparişi kaydet
+    const order = await Order.create({
+      user: req.user.id,
+      items: orderItems,
+      total,
+      shippingAddress: {
+        street: street.trim(),
+        city: city.trim(),
+        postalCode: postalCode.trim()
+      }
+    });
+
+    console.log('Order created:', order._id);
+
+    // (4) Stokları güncelle - with timeout
+    const stockUpdatePromises = orderItems.map(async item => {
+      const p = await Product.findById(item.product);
+      if (!p) {
+        throw new Error(`Product ${item.product} not found`);
+      }
+      if (p.quantityInStock < item.quantity) {
+        throw new Error(`Insufficient stock for product ${p.name}`);
+      }
+      p.quantityInStock -= item.quantity;
+      return p.save();
+    });
+
+    // Add timeout to stock updates - increased to 30 seconds
+    const stockUpdateTimeout = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('Stock update timeout')), 30000)
+    );
+
+    try {
+      await Promise.race([
+        Promise.all(stockUpdatePromises),
+        stockUpdateTimeout
+      ]);
+      console.log('Stock updates completed');
+    } catch (error) {
+      console.error('Error updating stock:', error);
+      // Rollback order creation
+      await Order.findByIdAndDelete(order._id);
+      throw error;
+    }
+
+    // (5) Sepeti temizle
+    cart.items = [];
+    await cart.save();
+    console.log('Cart cleared');
+
+    // (6) PDF fatura oluştur ve diske yaz - with timeout
+    const invoicePromise = new Promise(async (resolve, reject) => {
+      try {
+        const doc = new PDFDocument();
+        const filename = `invoice-${order._id}.pdf`;
+        const invoicesDir = path.join(__dirname, '../invoices');
+        if (!fs.existsSync(invoicesDir)) {
+          fs.mkdirSync(invoicesDir, { recursive: true });
+        }
+        const filePath = path.join(invoicesDir, filename);
+        const writeStream = fs.createWriteStream(filePath);
+        
+        // Handle write stream errors
+        writeStream.on('error', (error) => {
+          console.error('Error writing invoice:', error);
+          reject(error);
+        });
+
+        // Set a reasonable file size limit
+        let fileSize = 0;
+        doc.on('data', chunk => {
+          fileSize += chunk.length;
+          if (fileSize > 5000000) { // 5MB limit
+            doc.end();
+            reject(new Error('Invoice file too large'));
+          }
+        });
+
+        doc.pipe(writeStream);
+
+        // Optimize PDF generation
+        doc.fontSize(16).text(`Invoice for Order ${order._id}`, { underline: true });
+        doc.moveDown().fontSize(12).text(`Date: ${new Date().toLocaleString()}`);
+        doc.moveDown();
+        
+        // Add shipping address to invoice
+        doc.fontSize(14).text('Shipping Address:', { underline: true });
+        doc.fontSize(12).text(`${user.name}`);
+        doc.text(`${order.shippingAddress.street}`);
+        doc.text(`${order.shippingAddress.city}, ${order.shippingAddress.postalCode}`);
+        doc.moveDown();
+        
+        // Optimize product lookup by doing it in parallel
+        const products = await Promise.all(
+          order.items.map(item => Product.findById(item.product))
+        );
+        
+        doc.fontSize(14).text('Order Items:', { underline: true });
+        order.items.forEach((it, index) => {
+          const product = products[index];
+          const productName = product ? product.name : 'Unknown Product';
+          doc.text(`• ${it.quantity} × $${it.priceAtPurchase.toFixed(2)} (${productName})`);
+        });
+        
+        doc.moveDown().text(`TOTAL: $${order.total.toFixed(2)}`);
+        
+        // End the document and wait for the write stream to finish
+        doc.end();
+        writeStream.on('finish', () => {
+          console.log('Invoice generated:', filename);
+          resolve({ filename, filePath });
+        });
+      } catch (error) {
+        console.error('Error generating invoice:', error);
+        reject(error);
+      }
+    });
+
+    // Increase invoice timeout to 30 seconds
+    const invoiceTimeout = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('Invoice generation timeout')), 30000)
+    );
+
+    let invoiceResult;
+    try {
+      invoiceResult = await Promise.race([
+        invoicePromise,
+        invoiceTimeout
+      ]);
+    } catch (error) {
+      console.error('Invoice generation failed:', error);
+      // Continue without invoice if it fails
+      invoiceResult = { 
+        filename: `invoice-${order._id}.pdf`,
+        filePath: null
+      };
+    }
+
+    // (7) Mail gönder - with timeout and better error handling
+    if (emailService) {
+      const emailPromise = emailService.sendEmail({
+        to: user.email,
+        subject: `Your Order Confirmation #${order._id}`,
+        text: `Thank you for your order! Your order has been confirmed and is being processed.`,
+        attachments: invoiceResult.filePath ? [{ 
+          filename: invoiceResult.filename, 
+          path: invoiceResult.filePath 
+        }] : []
+      }).catch(error => {
+        console.error('Email sending failed:', error);
+        return null; // Convert rejection to resolved null
+      });
+
+      // Increase email timeout to 20 seconds
+      const emailTimeout = new Promise(resolve => 
+        setTimeout(() => resolve(null), 20000)
+      );
+
+      // Wait for either email to send or timeout, but don't fail if email fails
+      await Promise.race([emailPromise, emailTimeout]);
+    }
+
+    // (8) Yanıt dön
+    console.log('Checkout process completed successfully');
+    res.status(200).json({
+      status: 'success',
+      data: {
+        order,
+        invoiceUrl: `/invoices/${invoiceResult.filename}`
+      }
+    });
+  } catch (error) {
+    console.error('Checkout process failed:', error);
+    // If we haven't sent a response yet, send an error response
+    if (!res.headersSent) {
+      res.status(500).json({
+        status: 'error',
+        message: error.message || 'An error occurred during checkout'
+      });
+    }
+    next(error);
   }
-  const filePath = path.join(invoicesDir, filename);
-  const writeStream = fs.createWriteStream(filePath);
-  doc.pipe(writeStream);
-
-  doc.fontSize(16).text(`Invoice for Order ${order._id}`, { underline: true });
-  doc.moveDown().fontSize(12).text(`Date: ${new Date().toLocaleString()}`);
-  doc.moveDown();
-  
-  // Add shipping address to invoice
-  doc.fontSize(14).text('Shipping Address:', { underline: true });
-  doc.fontSize(12).text(`${user.name}`);
-  doc.text(`${order.shippingAddress.street}`);
-  doc.text(`${order.shippingAddress.city}, ${order.shippingAddress.postalCode}`);
-  doc.moveDown();
-  
-  doc.fontSize(14).text('Order Items:', { underline: true });
-  order.items.forEach(it => {
-    doc.text(`• ${it.quantity} × ${it.priceAtPurchase.toFixed(2)} (product ${it.product})`);
-  });
-  doc.moveDown().text(`TOTAL: ${order.total.toFixed(2)}`);
-  doc.end();
-  await new Promise(resolve => writeStream.on('finish', resolve));
-
-  // (7) Mail gönder
-  const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
-    port: +process.env.SMTP_PORT,
-    secure: false,
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS
-    }
-  });
-  await transporter.sendMail({
-    from: `"My Shop" <${process.env.SMTP_USER}>`,
-    to: req.user.email,
-    subject: `Your Invoice #${order._id}`,
-    text: `Thank you for your order! Your invoice is attached.`,
-    attachments: [{ filename, path: filePath }]
-  });
-
-  // (8) Yanıt dön
-  res.status(200).json({
-    status: 'success',
-    data: {
-      order,
-      invoiceUrl: `/invoices/${filename}`
-    }
-  });
 });
 
 // 2) Kullanıcı "order history" sayfası için:

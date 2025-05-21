@@ -2,6 +2,8 @@
 const User = require('../models/userModel');
 const catchAsync = require('../utils/catchAsync');
 const validator = require('validator');
+const Order = require('../models/orderModel');
+const AppError = require('../utils/appError');
 
 exports.getProfile = catchAsync(async (req, res, next) => {
   // Log the user ID from the token for debugging
@@ -131,5 +133,36 @@ exports.getUserById = catchAsync(async (req, res, next) => {
       name: user.name,
       photo: user.photo
     }
+  });
+});
+
+exports.getPurchasedProducts = catchAsync(async (req, res, next) => {
+  const { userId } = req.params;
+
+  // Check if the requesting user is the same as the userId or an admin
+  if (req.user._id.toString() !== userId && req.user.role !== 'admin') {
+    return next(new AppError('You are not authorized to view this user\'s purchase history', 403));
+  }
+
+  // Find all orders for this user that have been delivered
+  const orders = await Order.find({
+    user: userId,
+    status: 'delivered'
+  }).populate('items.product', 'name price image');
+
+  // Extract purchased products from orders
+  const purchasedProducts = orders.flatMap(order => 
+    order.items.map(item => ({
+      productId: item.product._id,
+      name: item.product.name,
+      price: item.priceAtPurchase,
+      quantity: item.quantity,
+      purchaseDate: order.createdAt
+    }))
+  );
+
+  res.status(200).json({
+    status: 'success',
+    data: purchasedProducts
   });
 });

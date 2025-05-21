@@ -197,11 +197,24 @@ exports.getProfitReport = catchAsync(async (req, res, next) => {
 
 // 1) Bekleyen (pending) iade taleplerini listele
 exports.getPendingRefunds = catchAsync(async (req, res) => {
+  console.log('Fetching pending refunds...');
+  
   const refunds = await Refund.find({ status: 'pending' })
-    .populate('order', 'user total')
+    .populate({
+      path: 'order',
+      select: 'user total createdAt',
+      populate: {
+        path: 'items.product',
+        select: 'name price image'
+      }
+    })
     .populate('user', 'name email')
-    .populate('items.product', 'name');
+    .populate('items.product', 'name price image')
+    .lean()  // Convert to plain JavaScript object for better performance
+    .exec(); // Explicitly execute the query
 
+  console.log(`Found ${refunds.length} pending refunds`);
+  
   res.status(200).json({
     status: 'success',
     results: refunds.length,
@@ -212,7 +225,12 @@ exports.getPendingRefunds = catchAsync(async (req, res) => {
 // 2) İade isteğini onayla (approve)
 exports.approveRefund = catchAsync(async (req, res) => {
   const { id } = req.params;
-  const refund = await Refund.findById(id);
+  
+  console.log(`Approving refund: ${id}`);
+  
+  const refund = await Refund.findById(id)
+    .populate('order')
+    .populate('user', 'email name');
 
   if (!refund) {
     return res.status(404).json({ status: 'fail', message: 'Refund request not found' });
@@ -230,12 +248,20 @@ exports.approveRefund = catchAsync(async (req, res) => {
   }
 
   // — Durumu güncelle
-  refund.status     = 'approved';
+  refund.status = 'approved';
   refund.approvedAt = Date.now();
   await refund.save();
 
-  // — (İsteğe bağlı) Müşteriye bildirim gönderme
-  // notifyCustomer(refund.user, `Your refund ${refund._id} has been approved`);
+  // Send email notification to customer
+  try {
+    await sendEmail({
+      to: refund.user.email,
+      subject: 'Refund Request Approved',
+      text: `Dear ${refund.user.name},\n\nYour refund request (ID: ${refund._id}) has been approved.\nAmount: $${refund.totalRefundAmount.toFixed(2)}\n\nThank you for your patience.`
+    });
+  } catch (err) {
+    console.error('Failed to send email notification:', err);
+  }
 
   res.status(200).json({
     status: 'success',
@@ -247,7 +273,11 @@ exports.approveRefund = catchAsync(async (req, res) => {
 // 3) İade isteğini reddet (reject)
 exports.rejectRefund = catchAsync(async (req, res) => {
   const { id } = req.params;
-  const refund = await Refund.findById(id);
+  
+  console.log(`Rejecting refund: ${id}`);
+  
+  const refund = await Refund.findById(id)
+    .populate('user', 'email name');
 
   if (!refund) {
     return res.status(404).json({ status: 'fail', message: 'Refund request not found' });
@@ -256,11 +286,20 @@ exports.rejectRefund = catchAsync(async (req, res) => {
     return res.status(400).json({ status: 'fail', message: 'Refund already processed' });
   }
 
-  refund.status     = 'rejected';
-  refund.approvedAt = Date.now(); // karar verme zamanı
+  refund.status = 'rejected';
+  refund.approvedAt = Date.now();
   await refund.save();
 
-  // notifyCustomer(refund.user, `Your refund ${refund._id} has been rejected`);
+  // Send email notification to customer
+  try {
+    await sendEmail({
+      to: refund.user.email,
+      subject: 'Refund Request Rejected',
+      text: `Dear ${refund.user.name},\n\nYour refund request (ID: ${refund._id}) has been rejected.\n\nIf you have any questions, please contact our support team.`
+    });
+  } catch (err) {
+    console.error('Failed to send email notification:', err);
+  }
 
   res.status(200).json({
     status: 'success',

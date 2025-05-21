@@ -64,10 +64,17 @@ exports.createProduct = catchAsync(async (req, res, next) => {
 // ─── GET /api/v1/product-manager/products/:id ────────────────────────────────
 exports.getProductById = catchAsync(async (req, res, next) => {
   const product = await Product.findById(req.params.id)
-                               .populate('category','name');
+                              .populate('category', 'name');
+
   if (!product) {
     return next(new AppError('No product found with that ID', 404));
   }
+
+  // For customer-facing routes, check if product is published
+  if (!product.published) {
+    return next(new AppError('This product is currently not available', 404));
+  }
+
   res.status(200).json({
     status: 'success',
     data: { product }
