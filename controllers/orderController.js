@@ -94,7 +94,13 @@ exports.checkout = catchAsync(async (req, res, next) => {
       }
     });
 
-    console.log('Order created:', order._id);
+    // Populate the order with necessary references
+    const populatedOrder = await Order.findById(order._id)
+      .populate('user', 'name email')
+      .populate('items.product', 'name price');
+
+    console.log('Order created:', populatedOrder._id);
+    console.log('Populated order:', populatedOrder);
 
     // (4) Stokları güncelle - with timeout
     const stockUpdatePromises = orderItems.map(async item => {
@@ -246,10 +252,19 @@ exports.checkout = catchAsync(async (req, res, next) => {
 
     // (8) Yanıt dön
     console.log('Checkout process completed successfully');
+    console.log('Order object being sent:', populatedOrder);
+    console.log('Response structure:', {
+      status: 'success',
+      data: {
+        order: populatedOrder,
+        invoiceUrl: `/invoices/${invoiceResult.filename}`
+      }
+    });
+
     res.status(200).json({
       status: 'success',
       data: {
-        order,
+        order: populatedOrder,
         invoiceUrl: `/invoices/${invoiceResult.filename}`
       }
     });
