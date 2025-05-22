@@ -1,26 +1,37 @@
 {
   "name": "ecommerce",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "app.js",
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "test": "jest --watchAll",
-    "test:coverage": "jest --coverage"
+    "start": "node app.js",
+    "dev": "nodemon app.js",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:verbose": "jest --verbose",
+    "test:controllers": "jest tests/controllers/",
+    "test:models": "jest tests/models/",
+    "test:auth": "jest tests/controllers/authController.test.js",
+    "test:category": "jest tests/controllers/categoryController.test.js",
+    "test:notification": "jest tests/controllers/notificationController.test.js",
+    "test:product": "jest tests/controllers/productController.test.js",
+    "test:review": "jest tests/controllers/reviewController.test.js",
+    "test:sales": "jest tests/controllers/salesController.test.js",
+    "test:user": "jest tests/controllers/userController.test.js",
+    "test:wishlist": "jest tests/controllers/wishlistController.test.js"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/durunef/cs308_backend.git"
   },
-  "keywords": [],
-  "author": "Omer Fatih  Tarim",
+  "keywords": ["ecommerce", "backend", "api", "nodejs", "express", "mongodb"],
+  "author": "Omer Fatih Tarim",
   "license": "ISC",
   "bugs": {
     "url": "https://github.com/durunef/cs308_backend/issues"
   },
   "homepage": "https://github.com/durunef/cs308_backend#readme",
-  "description": "create backend",
+  "description": "E-commerce backend API with Node.js, Express, and MongoDB",
   "dependencies": {
     "bcryptjs": "^3.0.2",
     "cors": "^2.8.5",
@@ -37,6 +48,29 @@
     "@ljharb/tsconfig": "^0.3.2",
     "jest": "^29.7.0",
     "mongodb-memory-server": "^10.1.4",
-    "nodemon": "^3.1.9"
+    "nodemon": "^3.1.9",
+    "supertest": "^7.1.1"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "coverageDirectory": "coverage",
+    "collectCoverageFrom": [
+      "controllers/**/*.js",
+      "models/**/*.js",
+      "utils/**/*.js",
+      "!**/node_modules/**",
+      "!**/coverage/**"
+    ],
+    "testMatch": [
+      "**/tests/**/*.test.js"
+    ],
+    "verbose": true,
+    "clearMocks": true,
+    "setupFilesAfterEnv": ["<rootDir>/tests/setup.js"],
+    "modulePathIgnorePatterns": ["<rootDir>/node_modules/"],
+    "testPathIgnorePatterns": ["<rootDir>/node_modules/"]
+  },
+  "engines": {
+    "node": ">=16.0.0"
   }
 }
