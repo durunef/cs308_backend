@@ -3,34 +3,111 @@ const express = require('express');
 const cors = require('cors');
 const app = express();
 const path = require('path'); 
+const fs = require('fs');
 const { protect }    = require('./middleware/authMiddleware');
 const restrictTo     = require('./middleware/restrictTo');
 
-
-
 // CORS middleware
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:5174'], // Allow both frontend ports
+  origin: true, // Allow all origins in development
   credentials: true
 }));
 
+// Body parser
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // Veritabanı bağlantısı
 require('./config/db');
 
-// Middleware'ler
-app.use(express.json());
+// Ensure directories exist
+const uploadsPath = path.join(__dirname, 'public/uploads');
+const imagesPath = path.join(__dirname, 'public/images');
+
+// Create directories if they don't exist
+[uploadsPath, imagesPath].forEach(dir => {
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+    console.log('Created directory:', dir);
+  }
+});
 
 // Serve static files from public directory
 app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
 app.use('/images', express.static(path.join(__dirname, 'public/images')));
 
-// **YENİ** invoices PDF dosyalarına erişimi koruma
+// Configure invoice serving with error handling
+const invoicesPath = path.join(__dirname, 'invoices');
+
+// Ensure invoices directory exists
+if (!fs.existsSync(invoicesPath)) {
+  fs.mkdirSync(invoicesPath, { recursive: true });
+  console.log('Created invoices directory at:', invoicesPath);
+}
+
+app.use('/invoices', (req, res) => {
+  const invoiceFile = path.join(invoicesPath, req.path);
+  
+  console.log('Invoice request received for:', req.path);
+  console.log('Looking for file at:', invoiceFile);
+  
+  // Check if file exists
+  fs.access(invoiceFile, fs.constants.F_OK, (err) => {
+    if (err) {
+      console.error('Invoice file not found:', err);
+      return res.status(404).json({
+        status: 'error',
+        message: 'Invoice not found',
+        path: invoiceFile
+      });
+    }
+
+    // File exists, try to send it
+    res.sendFile(invoiceFile, (err) => {
+      if (err) {
+        console.error('Error sending invoice file:', err);
+        return res.status(500).json({
+          status: 'error',
+          message: 'Error sending invoice file'
+        });
+      }
+      console.log('Invoice file sent successfully:', req.path);
+    });
+  });
+});
+
+// Protected invoice route for sales managers
 app.use(
   '/api/sales/invoices/files',
   protect,
   restrictTo('sales-manager'),
-  express.static(path.join(__dirname, 'invoices'))
+  (req, res) => {
+    const invoiceFile = path.join(invoicesPath, req.path);
+    console.log('Protected invoice request for:', req.path);
+    console.log('Looking for file at:', invoiceFile);
+    
+    fs.access(invoiceFile, fs.constants.F_OK, (err) => {
+      if (err) {
+        console.error('Protected invoice file not found:', err);
+        return res.status(404).json({
+          status: 'error',
+          message: 'Invoice not found',
+          path: invoiceFile
+        });
+      }
+      
+      res.sendFile(invoiceFile, (err) => {
+        if (err) {
+          console.error('Error sending protected invoice file:', err);
+          return res.status(500).json({
+            status: 'error',
+            message: 'Error sending invoice file'
+          });
+        }
+        console.log('Protected invoice file sent successfully:', req.path);
+      });
+    });
+  }
 );
 
 // Auth rotaları
@@ -72,7 +149,6 @@ app.use('/api/cart', cartRoutes);
 const wishlistRoutes = require('./routes/wishlistRoutes');
 app.use('/api/v1/wishlist', wishlistRoutes);
 
-app.use('/invoices', express.static(path.join(__dirname, 'invoices')));
 // Ana rota
 app.get('/', (req, res) => {
   res.send('Hello from the server side');

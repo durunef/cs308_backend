@@ -509,20 +509,42 @@ exports.requestRefund = async (req, res) => {
 // Get refund status
 exports.getRefundStatus = async (req, res) => {
   try {
-    const refund = await Refund.findById(req.params.refundId);
+    const { refundId } = req.params;
     
-    if (!refund) {
-      return res.status(404).json({ message: 'Refund request not found' });
+    // Validate refundId
+    if (!refundId || typeof refundId !== 'string') {
+      return res.status(400).json({ 
+        message: 'Invalid refund ID provided',
+        error: 'Invalid refund ID format'
+      });
+    }
+
+    const refundRequest = await Refund.findById(refundId)
+      .populate('order')
+      .populate('user', 'name email');
+    
+    if (!refundRequest) {
+      return res.status(404).json({ 
+        message: 'Refund request not found',
+        error: 'Refund request not found with the provided ID'
+      });
     }
 
     // Check if the refund belongs to the user
-    if (refund.user.toString() !== req.user._id.toString()) {
-      return res.status(403).json({ message: 'Not authorized to view this refund' });
+    if (refundRequest.user._id.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ 
+        message: 'Not authorized to view this refund',
+        error: 'User does not have permission to view this refund'
+      });
     }
 
-    res.status(200).json({ refund });
+    res.status(200).json({ refund: refundRequest });
   } catch (error) {
-    res.status(500).json({ message: 'Error fetching refund status', error: error.message });
+    console.error('Error in getRefundStatus:', error);
+    res.status(500).json({ 
+      message: 'Error fetching refund status',
+      error: error.message || 'Internal server error'
+    });
   }
 };
 

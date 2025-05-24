@@ -52,6 +52,9 @@ exports.createProduct = catchAsync(async (req, res, next) => {
   if (!productData.price) productData.price = null;
   if (!productData.cost) productData.cost = null;
   
+  // Set published status (default to true if not specified)
+  productData.published = productData.published !== false;
+  
   // Create the product
   const newProduct = await Product.create(productData);
   
@@ -71,7 +74,7 @@ exports.getProductById = catchAsync(async (req, res, next) => {
   }
 
   // For customer-facing routes, check if product is published
-  if (!product.published) {
+  if (product.published === false) {
     return next(new AppError('This product is currently not available', 404));
   }
 

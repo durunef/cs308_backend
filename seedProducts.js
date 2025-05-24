@@ -3,7 +3,7 @@ const Product = require('./models/productModel');
 const Category = require('./models/categoryModel');
 
 // MongoDB connection string - update with your actual connection string
-const DB_URI = process.env.MONGODB_URI || 'mongodb://mongodb:27017/ecommerce';
+const DB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/ecommerce';
 
 // Connect to MongoDB
 mongoose.connect(DB_URI)

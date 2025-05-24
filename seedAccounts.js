@@ -172,16 +172,17 @@ async function seedUser() {
 async function seedOrders(userId) {
   try {
     // Get some products from the database
-    const products = await Product.find().limit(8);
+    const products = await Product.find().limit(5); // Changed to 5 since we need 5 products
     const user = await User.findById(userId);
     
-    if (products.length < 8) {
+    if (products.length < 5) {
       throw new Error('Not enough products found in the database');
     }
 
     // Create orders with different statuses and dates
     const orders = [
       {
+        // Product E: purchased more than a month ago (10 april 2025) (status = delivered)
         user: userId,
         items: [
           {
@@ -189,7 +190,21 @@ async function seedOrders(userId) {
             quantity: 1,
             priceAtPurchase: products[0].price,
             costAtPurchase: products[0].price 
-          },
+          }
+        ],
+        total: products[0].price,
+        status: 'delivered',
+        shippingAddress: {
+          street: 'Üniversite St.',
+          city: 'Tuzla/İstanbul',
+          postalCode: '34000'
+        },
+        createdAt: new Date('2025-04-10')
+      },
+      {
+        // Product F: purchased less than a month ago (20 may 2025) (status = delivered)
+        user: userId,
+        items: [
           {
             product: products[1]._id,
             quantity: 1,
@@ -197,24 +212,39 @@ async function seedOrders(userId) {
             costAtPurchase: products[1].price 
           }
         ],
-        total: products[0].price + products[1].price,
+        total: products[1].price,
         status: 'delivered',
         shippingAddress: {
           street: 'Üniversite St.',
           city: 'Tuzla/İstanbul',
           postalCode: '34000'
         },
-        createdAt: new Date('2024-04-10')
+        createdAt: new Date('2025-05-20')
       },
       {
+        // Product G: purchased recently (status = processing)
         user: userId,
         items: [
           {
             product: products[2]._id,
             quantity: 1,
             priceAtPurchase: products[2].price,
-            costAtPurchase: products[2].price  
-          },
+            costAtPurchase: products[2].price
+          }
+        ],
+        total: products[2].price,
+        status: 'processing',
+        shippingAddress: {
+          street: 'Üniversite St.',
+          city: 'Tuzla/İstanbul',
+          postalCode: '34000'
+        },
+        createdAt: new Date() // Current date
+      },
+      {
+        // Product H: purchased recently (status = in-transit)
+        user: userId,
+        items: [
           {
             product: products[3]._id,
             quantity: 1,
@@ -222,64 +252,34 @@ async function seedOrders(userId) {
             costAtPurchase: products[3].price 
           }
         ],
-        total: products[2].price + products[3].price,
-        status: 'delivered',
-        shippingAddress: {
-          street: 'Üniversite St.',
-          city: 'Tuzla/İstanbul',
-          postalCode: '34000'
-        },
-        createdAt: new Date('2024-05-29')
-      },
-      {
-        user: userId,
-        items: [
-          {
-            product: products[4]._id,
-            quantity: 1,
-            priceAtPurchase: products[4].price,
-            costAtPurchase: products[4].price
-          },
-          {
-            product: products[5]._id,
-            quantity: 1,
-            priceAtPurchase: products[5].price,
-            costAtPurchase: products[5].price 
-          }
-        ],
-        total: products[4].price + products[5].price,
-        status: 'processing',
-        shippingAddress: {
-          street: 'Üniversite St.',
-          city: 'Tuzla/İstanbul',
-          postalCode: '34000'
-        },
-        createdAt: new Date()
-      },
-      {
-        user: userId,
-        items: [
-          {
-            product: products[6]._id,
-            quantity: 1,
-            priceAtPurchase: products[6].price,
-            costAtPurchase: products[6].price 
-          },
-          {
-            product: products[7]._id,
-            quantity: 1,
-            priceAtPurchase: products[7].price,
-            costAtPurchase: products[7].price 
-          }
-        ],
-        total: products[6].price + products[7].price,
+        total: products[3].price,
         status: 'in-transit',
         shippingAddress: {
           street: 'Üniversite St.',
           city: 'Tuzla/İstanbul',
           postalCode: '34000'
         },
-        createdAt: new Date()
+        createdAt: new Date() // Current date
+      },
+      {
+        // Additional product to meet the "at least five products" requirement
+        user: userId,
+        items: [
+          {
+            product: products[4]._id,
+            quantity: 1,
+            priceAtPurchase: products[4].price,
+            costAtPurchase: products[4].price 
+          }
+        ],
+        total: products[4].price,
+        status: 'delivered',
+        shippingAddress: {
+          street: 'Üniversite St.',
+          city: 'Tuzla/İstanbul',
+          postalCode: '34000'
+        },
+        createdAt: new Date('2025-05-15') // Mid-May order
       }
     ];
 

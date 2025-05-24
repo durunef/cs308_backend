@@ -78,7 +78,8 @@ const productSchema = new mongoose.Schema(
     },
     published: {
       type: Boolean,
-      default: true
+      default: true,
+      required: true
     }
   },
   {
